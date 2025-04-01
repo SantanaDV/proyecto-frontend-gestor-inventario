@@ -1,10 +1,8 @@
-
-
 function App() {
 
   return (
     <>
-      <h1 className="text-3xl">hola</h1>
+       <h1>Hola Mundo</h1>
     </>
   )
 }
