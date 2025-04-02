@@ -4,7 +4,6 @@ function App() {
   return (
     <>
       <Navbar />
-      <h1>Hola, React!</h1> 
     </>
   )
 }
