@@ -1,10 +1,12 @@
-function App() {
+import Navbar from "./components/Navbar"; // Asegúrate de que el archivo existe y está bien escrito
 
+function App() {
   return (
     <>
-       <h1>Hola Mundo</h1>
+      <Navbar />
+      <h1>Hola, React!</h1> 
     </>
-  )
+  );
 }
 
-export default App
+export default App;
