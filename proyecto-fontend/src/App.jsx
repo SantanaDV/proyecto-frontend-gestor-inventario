@@ -6,7 +6,7 @@ function App() {
       <Navbar />
       <h1>Hola, React!</h1> 
     </>
-  );
+  )
 }
 
 export default App;
