@@ -1,24 +1,26 @@
-import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
-
+import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';  // Importamos Link de react-router-dom
+import { useLocation } from 'react-router-dom';
 const navigation = [
-    { name: 'Inicio', href: '#', current: true },
-    { name: 'Almacen', href: '#', current: false },
-    { name: 'Inventario', href: '#', current: false },
-    { name: 'Tareas', href: '#', current: false },
-]
+  { name: 'Inicio', href: '/home', current: true },
+  { name: 'Almacen', href: '/almacen', current: false },
+  { name: 'Inventario', href: '/inventario', current: false },
+  { name: 'Tareas', href: '/tareas', current: false },
+];
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(' ');
 }
 
 export default function Example() {
+  const location = useLocation();
   return (
     <Disclosure as="nav" className="bg-white">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
-            {/* Mobile menu button*/}
+            {/* Mobile menu button */}
             <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:ring-2 focus:ring-white focus:outline-hidden focus:ring-inset">
               <span className="absolute -inset-0.5" />
               <span className="sr-only">Open main menu</span>
@@ -37,17 +39,18 @@ export default function Example() {
             <div className="hidden sm:ml-6 sm:block">
               <div className="flex space-x-4">
                 {navigation.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
-                    href={item.href}
-                    aria-current={item.current ? 'page' : undefined}
+                    to={item.href} // Usamos Link para navegación
                     className={classNames(
-                      item.current ? 'bg-red-900 text-white' : 'text-black hover:bg-red-900 hover:text-white',
-                      'rounded-md px-3 py-2 text-sm font-medium',
+                      location.pathname === item.href
+                        ? 'bg-red-900 text-white' // Si la ruta coincide, se marca como activo
+                        : 'text-black hover:bg-red-900 hover:text-white',
+                      'rounded-md px-3 py-2 text-sm font-medium'
                     )}
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -128,5 +131,5 @@ export default function Example() {
         </div>
       </DisclosurePanel>
     </Disclosure>
-  )
+  );
 }
