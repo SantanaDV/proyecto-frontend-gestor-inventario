@@ -1,7 +1,7 @@
 import React from 'react'
-
+import Comunication from '../utilities/comunication'
 export default function Home() {
   return (
-    <div>Almacen</div>
+    <div>Almacen: <Comunication/></div>
   )
 }
