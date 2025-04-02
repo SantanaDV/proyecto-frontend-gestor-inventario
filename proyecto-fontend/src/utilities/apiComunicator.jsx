@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const useApi = (endpoint, options = {}) => {
-  const baseUrl = 'http://localhost:8080/api'; // URL base fija
-  const [uri, setUri] = useState(`${baseUrl}${endpoint}`); // URL completa
+  const baseUrl = 'http://localhost:8080/api'; 
+  const [uri, setUri] = useState(`${baseUrl}${endpoint}`); 
   console.log(baseUrl+endpoint)
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,12 +22,12 @@ const useApi = (endpoint, options = {}) => {
               'Content-Type': 'application/json',
               ...(options.headers || {}),
             },
-            withCredentials: true, // Agregar esto si el backend usa sesiones/cookies
+            withCredentials: true,
             data: options.body || undefined,
           });
           
 
-        setData(response.data); // Axios automáticamente convierte la respuesta a JSON
+        setData(response.data);
       } catch (err) {
         console.error("Axios Error:", err);
         if (err.response) {
@@ -41,9 +41,9 @@ const useApi = (endpoint, options = {}) => {
     };
 
     fetchData();
-  }, [uri, options]); // Se vuelve a ejecutar si la URL o las opciones cambian
+  }, [uri, options]);
 
-  return { data, loading, error, setUri }; // Retorna también la función setUri para cambiar la URL
+  return { data, loading, error, setUri }; 
 };
 
 export default useApi;
