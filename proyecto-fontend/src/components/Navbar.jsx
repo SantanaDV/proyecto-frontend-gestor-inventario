@@ -14,7 +14,7 @@ function classNames(...classes) {
 
 export default function Example() {
   return (
-    <Disclosure as="nav" className="bg-red-700">
+    <Disclosure as="nav" className="bg-white">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
           <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
@@ -42,7 +42,7 @@ export default function Example() {
                     href={item.href}
                     aria-current={item.current ? 'page' : undefined}
                     className={classNames(
-                      item.current ? 'bg-red-900 text-white' : 'text-gray-300 hover:bg-red-900 hover:text-white',
+                      item.current ? 'bg-red-900 text-white' : 'text-black hover:bg-red-900 hover:text-white',
                       'rounded-md px-3 py-2 text-sm font-medium',
                     )}
                   >
@@ -82,7 +82,7 @@ export default function Example() {
                 <MenuItem>
                   <a
                     href="#"
-                    className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                    className="block px-4 py-2 text-sm text-gblack data-focus:bg-red-200 data-focus:outline-hidden"
                   >
                     Your Profile
                   </a>
@@ -90,7 +90,7 @@ export default function Example() {
                 <MenuItem>
                   <a
                     href="#"
-                    className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                    className="block px-4 py-2 text-sm text-black data-focus:bg-red-200 data-focus:outline-hidden"
                   >
                     Settings
                   </a>
@@ -98,7 +98,7 @@ export default function Example() {
                 <MenuItem>
                   <a
                     href="#"
-                    className="block px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-100 data-focus:outline-hidden"
+                    className="block px-4 py-2 text-sm text-black data-focus:bg-red-200 data-focus:outline-hidden"
                   >
                     Sign out
                   </a>
