@@ -1,8 +1,9 @@
-import React from 'react'
-import useApi from './apiComunicator'
+import { useMemo } from 'react';
+import useApi from './apiComunicator';
+
 export default function Comunication() {
-  const { data, loading, error,setUri } = useApi('/tarea',{});
-  return (
-    <div> Respuesta: {error} </div>
-  )
+  const options = useMemo(() => ({}), []); // o define las opciones reales
+  const { data, loading, error, setUri } = useApi('/tarea', options);
+
+  return <div>Respuesta: {error || JSON.stringify(data)}</div>;
 }
