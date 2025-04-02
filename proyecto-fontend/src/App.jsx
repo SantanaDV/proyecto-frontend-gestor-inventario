@@ -1,9 +1,13 @@
-import Navbar from "./components/Navbar"; // Asegúrate de que el archivo existe y está bien escrito
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Body from "./components/Body";
 
 function App() {
   return (
     <>
       <Navbar />
+      <Body/>
+      <Footer />
     </>
   )
 }
