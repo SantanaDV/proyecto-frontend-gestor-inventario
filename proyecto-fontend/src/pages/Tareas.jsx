@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useApi from '../utilities/apiComunicator';
+import HeaderFuncional from '../components/HeaderFuncional'
 
 export default function Tareas() {
 const { data, loading, error,setUri,setError } = useApi("/tarea", {}); 
@@ -15,6 +16,9 @@ const { data, loading, error,setUri,setError } = useApi("/tarea", {});
   }, [data, setError]); 
 
   return (
+
+    <>
+    <HeaderFuncional />
     <div style={styles.grid}>
       {loading && <p>Cargando...</p>}
       {error && <p>Error: {error}</p>}
@@ -28,6 +32,9 @@ const { data, loading, error,setUri,setError } = useApi("/tarea", {});
         </div>
       ))}
     </div>
+    
+    
+    </>
   );
 }
 const styles = {
