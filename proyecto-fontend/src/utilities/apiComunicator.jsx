@@ -4,7 +4,8 @@ import axios from 'axios';
 const useApi = (endpoint, options = {}) => {
   const baseUrl = 'http://localhost:8080/api'; 
   const [uri, setUri] = useState(`${baseUrl}${endpoint}`); 
-  console.log(baseUrl+endpoint)
+  console.log(baseUrl + endpoint);
+  
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,18 +17,18 @@ const useApi = (endpoint, options = {}) => {
       try {
         setLoading(true);
         const response = await axios({
-            url: uri,
-            method: options.method || 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(options.headers || {}),
-            },
-            withCredentials: true,
-            data: options.body || undefined,
-          });
-          
+          url: uri,
+          method: options.method || 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+          },
+          withCredentials: true,
+          data: options.body || undefined,
+        });
 
         setData(response.data);
+        setError(null); // Limpia errores previos si la petición es exitosa
       } catch (err) {
         console.error("Axios Error:", err);
         if (err.response) {
@@ -37,6 +38,9 @@ const useApi = (endpoint, options = {}) => {
         } else {
           setError(err.message);
         }
+        setData(null); // Evita mostrar datos erróneos
+      } finally {
+        setLoading(false); // 🔥 Ahora loading siempre se actualizará
       }
     };
 
