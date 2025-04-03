@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import useApi from '../utilities/apiComunicator';
 
-export default function Inventario() {
-  const { data, loading, error,setUri,setError } = useApi("/producto", {}); 
+export default function Tareas() {
+const { data, loading, error,setUri,setError } = useApi("/tarea", {}); 
   const [parsedData, setParsedData] = useState([]);
 
   useEffect(() => {
@@ -18,17 +18,35 @@ export default function Inventario() {
     <div style={styles.grid}>
       {loading && <p>Cargando...</p>}
       {error && <p>Error: {error}</p>}
-
-      {parsedData.map((producto) => (
-        <div key={producto.id_producto} style={styles.card}>
-          <img src={producto.url_img} alt={producto.nombre} style={styles.image} />
-          <h3 style={styles.productName}>{producto.nombre}</h3>
-          <p><strong>Cantidad:</strong> {producto.cantidad}</p>
-          <p><strong>Estado:</strong> {producto.estado}</p>
-          <p><strong>Categoría:</strong> {producto.categoria?.descripcion || "Sin categoría"}</p>
-          <p><strong>QR:</strong> {producto.codigoQr}</p>
+      {parsedData.map((tarea) => (
+        <div key={tarea.id} style={styles.card}>
+          <h3 style={styles.taskName}>{tarea.descripcion}</h3>
+          <p><strong>Estado:</strong> {tarea.estado}</p>
+          <p><strong>Empleado Asignado:</strong> {tarea.empleado_asignado}</p>
+          <p><strong>Fecha de Asignación:</strong> {new Date(tarea.fecha_asignacion).toLocaleString()}</p>
+          <p><strong>Fecha de Finalización:</strong> {new Date(tarea.fecha_finalizacion).toLocaleString()}</p>
         </div>
       ))}
     </div>
   );
 }
+const styles = {
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+    gap: '20px',
+    marginTop: '20px',
+  },
+  card: {
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    padding: '15px',
+    boxShadow: '2px 2px 10px rgba(0, 0, 0, 0.1)',
+    textAlign: 'center',
+  },
+  taskName: {
+    fontSize: '18px',
+    color: '#007bff',
+  },
+};
+
