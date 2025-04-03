@@ -46,7 +46,7 @@ const useApi = (endpoint, options = {}) => {
     fetchData(); // Llamamos la función para hacer la solicitud
   }, []); // Solo se ejecuta una vez, cuando el componente se monta
 
-  return { data, loading, error, setUri }; 
+  return { data, loading, error, setUri,setError }; 
 };
 
 export default useApi;
