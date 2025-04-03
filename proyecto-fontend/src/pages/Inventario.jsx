@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import useApi from '../utilities/apiComunicator';
 
 export default function Inventario() {
-  const { data, loading, error } = useApi("/producto", {}); 
+  const { data, loading, error,setUri,setError } = useApi("/producto", {}); 
   const [parsedData, setParsedData] = useState([]);
 
   useEffect(() => {
@@ -12,7 +12,7 @@ export default function Inventario() {
     } else {
       setError('Los datos no son válidos');
     }
-  }, [data]); 
+  }, [data, setError]); 
 
   return (
     <div style={styles.grid}>
@@ -33,28 +33,3 @@ export default function Inventario() {
   );
 }
 
-const styles = {
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-    gap: '20px',
-    marginTop: '20px',
-  },
-  card: {
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    padding: '15px',
-    boxShadow: '2px 2px 10px rgba(0, 0, 0, 0.1)',
-    textAlign: 'center',
-  },
-  image: {
-    width: '100%',
-    height: '150px',
-    objectFit: 'cover',
-    borderRadius: '5px',
-  },
-  productName: {
-    fontSize: '18px',
-    color: '#007bff',
-  },
-};
