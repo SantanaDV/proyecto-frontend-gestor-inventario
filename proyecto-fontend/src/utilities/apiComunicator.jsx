@@ -4,7 +4,6 @@ import axios from 'axios';
 const useApi = (endpoint, options = {}) => {
   const baseUrl = 'http://localhost:8080/api'; 
   const [uri, setUri] = useState(`${baseUrl}${endpoint}`); 
-  console.log(baseUrl + endpoint);
   
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +14,7 @@ const useApi = (endpoint, options = {}) => {
       if (!uri) return;
 
       try {
-        setLoading(true);
+        setLoading(true); // Empezamos a cargar
         const response = await axios({
           url: uri,
           method: options.method || 'GET',
@@ -27,8 +26,8 @@ const useApi = (endpoint, options = {}) => {
           data: options.body || undefined,
         });
 
-        setData(response.data);
-        setError(null); // Limpia errores previos si la petición es exitosa
+        setData(response.data); // Establecemos los datos
+        setError(null); // Limpia errores previos
       } catch (err) {
         console.error("Axios Error:", err);
         if (err.response) {
@@ -40,12 +39,12 @@ const useApi = (endpoint, options = {}) => {
         }
         setData(null); // Evita mostrar datos erróneos
       } finally {
-        setLoading(false); // 🔥 Ahora loading siempre se actualizará
+        setLoading(false); // Termina el estado de carga
       }
     };
 
-    fetchData();
-  }, [uri, options]);
+    fetchData(); // Llamamos la función para hacer la solicitud
+  }, []); // Solo se ejecuta una vez, cuando el componente se monta
 
   return { data, loading, error, setUri }; 
 };
