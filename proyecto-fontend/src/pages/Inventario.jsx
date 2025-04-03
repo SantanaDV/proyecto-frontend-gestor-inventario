@@ -5,10 +5,23 @@ import HeaderFuncional from '../components/HeaderFuncional';
 const cargarDatos = (data, setParsedData, setError) => {
   if (!data) return;
   if (Array.isArray(data)) {
-    setParsedData(data);
+    // Ordenar productos por nombre alfabéticamente
+    const productosOrdenados = data.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    setParsedData(productosOrdenados);
   } else {
     setError('Los datos no son válidos');
     setParsedData(null);
+  }
+};
+
+const getStatusColor = (estado) => {
+  switch (estado) {
+    case 'activo':
+      return 'bg-green-100 text-green-600';  
+    case 'desactivado':
+      return 'bg-red-100 text-red-600'; 
+    default:
+      return 'bg-gray-100 text-gray-600'; 
   }
 };
 
@@ -36,7 +49,12 @@ export default function Inventario() {
             />
             <h3 className="text-lg text-blue-500 font-semibold">{producto.nombre}</h3>
             <p><strong>Cantidad:</strong> {producto.cantidad}</p>
-            <p><strong>Estado:</strong> {producto.estado}</p>
+            <p>
+              <strong>Estado:</strong>
+              <span className={`px-2 py-1 rounded-full ${getStatusColor(producto.estado)}`}>
+                {producto.estado}
+              </span>
+            </p>
             <p><strong>Categoría:</strong> {producto.categoria?.descripcion || "Sin categoría"}</p>
             <p><strong>QR:</strong> {producto.codigoQr}</p>
           </div>
