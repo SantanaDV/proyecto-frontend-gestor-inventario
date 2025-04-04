@@ -55,7 +55,7 @@ export default function Inventario() {
 
       <div className="grid grid-cols-2 gap-5 mt-5 p-8">
         <div>
-          <h2 className="text-lg font-bold text-green-600 mb-4 text-center">Productos Activos</h2>
+          <h2 className="text-2xl font-medium  text-center mb-4">Productos Activos</h2>
           {productosActivos.length === 0 ? <p>No hay productos activos.</p> : productosActivos.map(producto => (
             <div key={producto.id_producto} className="border border-gray-300 rounded-lg shadow-md text-center bg-green-50 p-4 mb-4 flex flex-col items-center">
               <h3 className="text-lg text-blue-500 font-semibold">{producto.nombre}</h3>
@@ -68,7 +68,7 @@ export default function Inventario() {
         </div>
 
         <div>
-          <h2 className="text-lg font-bold text-red-600 mb-4 text-center">Productos Desactivados</h2>
+        <h2 className="text-2xl font-medium  text-center mb-4">Productos Desactivados</h2>
           {productosDesactivados.length === 0 ? <p>No hay productos desactivados.</p> : productosDesactivados.map(producto => (
             <div key={producto.id_producto} className="border border-gray-300 rounded-lg shadow-md text-center bg-red-50 p-4 mb-4 flex flex-col items-center">
               <h3 className="text-lg text-blue-500 font-semibold">{producto.nombre}</h3>
