@@ -1,24 +1,22 @@
-import React from 'react'
+import React from 'react';
 
-export default function Header() {
+export default function HeaderFuncional({ onAddClick }) {
   return (
-    <section className="bg-red-700 text-white py-20">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold sm:text-5xl">
-            Bienvenido a Qualica-RD
-          </h1>
-          <p className="mt-4 text-lg text-gray-300">
-            Aquí encontrarás todo lo que necesitas para gestionar tu negocio de manera eficiente.
-          </p>
-          <a
-            href="#"
-            className="mt-8 inline-block rounded-lg bg-white py-3 px-6 text-lg font-semibold text-red-700 hover:bg-gray-200"
+    <section className="bg-red-700 text-white py-4">
+      <div className="flex justify-between items-center px-8">
+        <p>Funcionalidades</p>
+        <div className="flex gap-4">
+          <button 
+            onClick={onAddClick} 
+            className="mr-2 bg-white text-red-700 border border-red-700 px-4 py-1 rounded font-semibold hover:bg-gray-200 hover:text-red-900"
           >
-            Empezar ahora
-          </a>
+            Añadir
+          </button>
+          <button className="bg-white text-red-700 border border-red-700 px-4 py-1 rounded font-semibold hover:bg-gray-200 hover:text-red-900">
+            Editar
+          </button>
         </div>
       </div>
     </section>
-  )
+  );
 }
