@@ -28,19 +28,42 @@ const getStatusColor = (estado) => {
 export default function Inventario() {
   const { data, loading, error, setUri, setError } = useApi("/producto", {});
   const [parsedData, setParsedData] = useState([]);
+  const [filter, setFilter] = useState(''); 
 
   useEffect(() => {
     cargarDatos(data, setParsedData, setError);
   }, [data, setParsedData, setError]);
 
+  // Filtrar productos según el estado seleccionado
+  const filteredProducts = filter ? parsedData.filter((tarea) => tarea.estado === filter) : parsedData;
+
   return (
     <>
       <HeaderFuncional />
+
+      <div className="flex justify-center gap-4 mt-6">
+        <button 
+          onClick={() => setFilter('')} 
+          className={`px-4 py-2 rounded ${filter === '' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
+          Ver Todos
+        </button>
+        <button 
+          onClick={() => setFilter('activo')} 
+          className={`px-4 py-2 rounded ${filter === 'activo' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}>
+          Activo
+        </button>
+        <button 
+          onClick={() => setFilter('desactivado')} 
+          className={`px-4 py-2 rounded ${filter === 'desactivado' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}>
+          Desactivado
+        </button>
+      </div>
+
       <div className="grid grid-cols-[repeat(auto-fill,_minmax(250px,_1fr))] gap-5 mt-5 p-8">
         {loading && <p className="col-span-full text-center">Cargando...</p>}
         {error && <p className="col-span-full text-center text-red-500">Error: {error}</p>}
 
-        {parsedData.map((producto) => (
+        {filteredProducts.map((producto) => (
           <div key={producto.id_producto} className="border border-gray-300 rounded-lg shadow-md text-center bg-white p-4">
             <img
               src={producto.url_img}
