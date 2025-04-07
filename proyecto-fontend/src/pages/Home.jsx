@@ -1,9 +1,9 @@
 import React from 'react'
-import Header from '../components/Header'
+import HeaderFuncional from '../components/HeaderFuncional'
 export default function Home() {
   return (
     <>
-    <Header/>
+    <HeaderFuncional/>
     <main>
         <section className="py-16 bg-gray-50">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -52,8 +52,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-  
-       
       </main>
 
     </>

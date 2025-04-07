@@ -1,11 +1,12 @@
-import React from 'react'
-import HeaderFuncional from '../components/HeaderFuncional'
-import DrawingApp from '../components/DibujitosPrueba'
+import React from 'react';
+import HeaderFuncional from '../components/HeaderFuncional';  // Header si es necesario
+import AlmacenVisual from '../components/AlmacenVisual';  // Importamos el componente visual del almacén
+
 export default function Almacen() {
   return (
     <div>
-      <HeaderFuncional/>
-      <DrawingApp/>
+      <HeaderFuncional />
+      <AlmacenVisual />
     </div>
-  )
+  );
 }
