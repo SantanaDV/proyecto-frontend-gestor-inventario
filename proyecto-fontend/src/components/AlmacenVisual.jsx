@@ -1,4 +1,3 @@
-// components/AlmacenVisual.jsx
 import React, { useState, useEffect } from 'react';
 import { Stage, Layer, Rect, Group, Text } from 'react-konva';
 import { saveToStorage } from '../utilities/storage.JSX';
@@ -120,7 +119,7 @@ export default function AlmacenVisual() {
               />
               <Text
                 text={shelf.id}
-                fontSize={12}
+                fontSize={7}
                 x={5}
                 y={5}
                 rotation={shelf.orientation === 'vertical' ? 0 : 0}  // Rotar el texto para estanterías verticales
