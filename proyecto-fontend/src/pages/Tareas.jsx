@@ -15,6 +15,9 @@ export default function Tareas() {
     id_categoria: ''
   });
   const [filters, setFilters] = useState({ empleado: '', fecha: '' });
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [empleadosDisponibles, setEmpleadosDisponibles] = useState([]);
+  const [isModalOpenAsignar, setIsModalOpenAsignar] = useState(false);
 
   useEffect(() => {
     if (!data) return;
@@ -44,6 +47,7 @@ export default function Tareas() {
   const tasksPorHacer = filteredTasks.filter(tarea => tarea.estado === 'Por hacer');
   const tasksEnProceso = filteredTasks.filter(tarea => tarea.estado === 'En Proceso');
   const tasksFinalizadas = filteredTasks.filter(tarea => tarea.estado === 'Finalizada');
+  const tasksSinAsignar = parsedData.filter(tarea => tarea.empleado_asignado === '' || tarea.empleado_asignado === 'Sin asignar');
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -51,6 +55,7 @@ export default function Tareas() {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
+    setSelectedTask(null);
   };
 
   const handleModalOpen = () => {
@@ -79,11 +84,35 @@ export default function Tareas() {
     setIsModalOpen(false); 
   };
 
+  const handleModalOpenAsignar = () => {
+    setIsModalOpenAsignar(true);
+  };
+
+  const handleTareaSeleccionada = (tarea) => {
+    setSelectedTask(tarea); // Guardamos la tarea seleccionada para editar
+  };
+
+  const handleEmpleadoChange = (e) => {
+    setSelectedTask({
+      ...selectedTask,
+      empleado_asignado: e.target.value
+    });
+  };
+
+  const handleSaveAsignacion = () => {
+    console.log("Empleado asignado:", selectedTask);
+    setIsModalOpenAsignar(false); // Cerrar el modal después de guardar
+    setSelectedTask(null); // Limpiar la tarea seleccionada
+  };
+
   return (
     <>
       <HeaderFuncional
         botones={['Añadir', 'Asignar Usuario', 'Calendario']}
-        acciones={{ Añadir: handleModalOpen }}
+        acciones={{ 
+          Añadir: handleModalOpen,
+          'Asignar Usuario': handleModalOpenAsignar
+        }}
       />
       
       <div className="p-6">
@@ -162,6 +191,52 @@ export default function Tareas() {
                 <button onClick={handleModalClose} className="bg-red-300 text-black px-4 py-2 rounded">Cancelar</button>
                 <button onClick={handleSaveTask} className="bg-red-500 text-white px-4 py-2 rounded">Guardar</button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {isModalOpenAsignar && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg w-1/3">
+              <h3 className="text-2xl mb-4 text-center">Asignar Usuario a la Tarea</h3>
+              <div>
+                <h4 className="text-lg font-medium mb-2">Selecciona una tarea:</h4>
+                <ul className="mb-4">
+                  {tasksSinAsignar.map(tarea => (
+                    <li key={tarea.id} className="flex justify-between items-center mb-2">
+                      <p>{tarea.descripcion}</p>
+                      <button
+                        onClick={() => handleTareaSeleccionada(tarea)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                      >
+                        Asignar
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                
+                {selectedTask && (
+                  <div>
+                    <h4 className="mb-2">Asignar Usuario a: {selectedTask.descripcion}</h4>
+                    <select
+                      value={selectedTask.empleado_asignado}
+                      onChange={handleEmpleadoChange}
+                      className="border p-2 rounded w-full"
+                    >
+                      <option value="">Seleccionar Empleado</option>
+                      {empleadosDisponibles.map(e => (
+                        <option key={e.id} value={e.empleado_asignado}>
+                          {e.empleado_asignado}
+                        </option>
+                      ))}
+                    </select>
+                    <button onClick={handleSaveAsignacion} className="bg-green-500 text-white px-4 py-2 rounded mt-4">
+                      Guardar Asignación
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setIsModalOpenAsignar(false)} className="bg-red-300 text-black px-4 py-2 rounded mt-4">Cancelar</button>
             </div>
           </div>
         )}
