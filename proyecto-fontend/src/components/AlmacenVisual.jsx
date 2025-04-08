@@ -4,59 +4,120 @@ import { saveToStorage } from '../utilities/storage.JSX';
 import { loadFromStorage } from '../utilities/storage.JSX';
 
 export default function AlmacenVisual() {
-  const [dimensions, setDimensions] = useState({ width: '', height: '' });
+  const [gridSize, setGridSize] = useState('');
   const [warehouseSize, setWarehouseSize] = useState(null);
   const [shelves, setShelves] = useState([]);
   const [showError, setShowError] = useState(false);
+  const [cellSize, setCellSize] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [showGrid, setShowGrid] = useState(true);
 
-  // Cargar datos guardados desde el almacenamiento local
+  const padding = 20;
+  const adjustedWidth = window.innerWidth - padding;
+
   useEffect(() => {
     const savedSize = loadFromStorage('warehouseSize');
     const savedShelves = loadFromStorage('shelves', []);
-    if (savedSize) setWarehouseSize(savedSize);
+    if (savedSize) {
+      setWarehouseSize(savedSize);
+      setWindowWidth(window.innerWidth);
+      setCellSize((window.innerWidth - padding) / savedSize.gridCount);
+    }
     setShelves(savedShelves);
   }, []);
 
   useEffect(() => {
-    if (warehouseSize) saveToStorage('warehouseSize', warehouseSize);
-  }, [warehouseSize]);
+    if (warehouseSize) {
+      saveToStorage('warehouseSize', warehouseSize);
+      setCellSize(adjustedWidth / warehouseSize.gridCount);
+    }
+  }, [warehouseSize, adjustedWidth]);
 
   useEffect(() => {
     saveToStorage('shelves', shelves);
   }, [shelves]);
 
-  const handleSizeSubmit = (e) => {
+  const handleGridSubmit = (e) => {
     e.preventDefault();
-    if (dimensions.width <= 0 || dimensions.height <= 0) {
+    const n = parseInt(gridSize);
+    if (isNaN(n) || n <= 0) {
       setShowError(true);
       return;
     }
-
     setShowError(false);
     const size = {
-      width: window.innerWidth,  // Establecemos el ancho como el ancho de la página
-      height: (window.innerWidth / 20) * dimensions.height  // Calculamos la altura proporcional
+      gridCount: n,
+      width: adjustedWidth,
+      height: n * (adjustedWidth / n),
     };
     setWarehouseSize(size);
+    setCellSize(adjustedWidth / n);
     saveToStorage('warehouseSize', size);
   };
 
-  const addShelf = (orientation) => {
-    const id = `Estantería-${Date.now()}`;
-    const newShelf = {
-      id,
-      x: 50,
-      y: 50,
-      width: orientation === 'horizontal' ? 100 : 20,
-      height: orientation === 'horizontal' ? 20 : 100,
-      orientation,
-    };
-    setShelves([...shelves, newShelf]);
+  const addShelf = (orientation = 'horizontal') => {
+    const usedPositions = shelves.map(s => `${s.row}-${s.col}`);
+    for (let i = 0; i < warehouseSize.gridCount ** 2; i++) {
+      const row = Math.floor(i / warehouseSize.gridCount);
+      const col = i % warehouseSize.gridCount;
+      const key = `${row}-${col}`;
+      if (!usedPositions.includes(key)) {
+        const id = `Estantería-${Date.now()}`;
+        const width = orientation === 'horizontal' ? cellSize * 2 : cellSize;
+        const height = orientation === 'vertical' ? cellSize * 2 : cellSize;
+
+        const newShelf = {
+          id,
+          orientation,
+          row,
+          col,
+          x: col * cellSize,
+          y: row * cellSize,
+          width: width,
+          height: height
+        };
+        setShelves([...shelves, newShelf]);
+        break;
+      }
+    }
   };
 
   const moveShelf = (e, id) => {
     const pos = e.target.position();
-    setShelves(prev => prev.map(shelf => shelf.id === id ? { ...shelf, ...pos } : shelf));
+    const newCol = Math.floor(pos.x / cellSize);
+    const newRow = Math.floor(pos.y / cellSize);
+
+    if (
+      newCol >= 0 && newCol < warehouseSize.gridCount &&
+      newRow >= 0 && newRow < warehouseSize.gridCount
+    ) {
+      const isOccupied = shelves.some(
+        (s) => s.id !== id && s.row === newRow && s.col === newCol
+      );
+
+      if (!isOccupied) {
+        const updatedShelves = shelves.map(shelf => {
+          if (shelf.id === id) {
+            return {
+              ...shelf,
+              row: newRow,
+              col: newCol,
+              x: newCol * cellSize,
+              y: newRow * cellSize,
+            };
+          }
+          return shelf;
+        });
+        setShelves(updatedShelves);
+      } else {
+        const original = shelves.find(s => s.id === id);
+        e.target.to({
+          x: original.col * cellSize,
+          y: original.row * cellSize,
+          duration: 0.1,
+        });
+      }
+    }
   };
 
   const resetWarehouse = () => {
@@ -64,31 +125,27 @@ export default function AlmacenVisual() {
     localStorage.removeItem('shelves');
     setWarehouseSize(null);
     setShelves([]);
+    setGridSize('');
+  };
+
+  const toggleGrid = () => {
+    setShowGrid(!showGrid);
   };
 
   if (!warehouseSize) {
     return (
-      <form onSubmit={handleSizeSubmit} className="p-4">
-        <label className="block">Ancho:
+      <form onSubmit={handleGridSubmit} className="p-4">
+        <label className="block">Tamaño de la cuadrícula (NxN):
           <input
             type="number"
-            value={dimensions.width}
-            onChange={(e) => setDimensions({ ...dimensions, width: e.target.value })}
-            className="border mx-2 p-1"
-            required
-          />
-        </label>
-        <label className="block mt-2">Alto:
-          <input
-            type="number"
-            value={dimensions.height}
-            onChange={(e) => setDimensions({ ...dimensions, height: e.target.value })}
+            value={gridSize}
+            onChange={(e) => setGridSize(e.target.value)}
             className="border mx-2 p-1"
             required
           />
         </label>
         <button type="submit" className="mt-4 bg-blue-500 text-white px-4 py-2">Crear Almacén</button>
-        {showError && <p className="text-red-500 mt-2">Por favor, ingresa valores válidos para el ancho y alto.</p>}
+        {showError && <p className="text-red-500 mt-2">Por favor, ingresa un número válido.</p>}
       </form>
     );
   }
@@ -96,12 +153,32 @@ export default function AlmacenVisual() {
   return (
     <div>
       <div className="p-2 space-x-2">
-        <button onClick={() => addShelf('horizontal')} className="bg-green-500 text-white px-3 py-1">Agregar Horizontal</button>
-        <button onClick={() => addShelf('vertical')} className="bg-green-500 text-white px-3 py-1">Agregar Vertical</button>
+        <button onClick={() => addShelf('horizontal')} className="bg-green-500 text-white px-3 py-1">Agregar Estantería Horizontal</button>
+        <button onClick={() => addShelf('vertical')} className="bg-blue-500 text-white px-3 py-1">Agregar Estantería Vertical</button>
         <button onClick={resetWarehouse} className="bg-red-500 text-white px-3 py-1 ml-4">Resetear Almacén</button>
+        <button onClick={toggleGrid} className="bg-yellow-500 text-white px-3 py-1 ml-4">
+          {showGrid ? 'Ocultar Cuadrícula' : 'Mostrar Cuadrícula'}
+        </button>
       </div>
-      <Stage width={warehouseSize.width} height={warehouseSize.height} className="border m-2">
+      <Stage
+        width={warehouseSize.width}
+        height={warehouseSize.height}
+        className="border m-2"
+        style={{ display: 'block', overflow: 'hidden' }}
+      >
         <Layer>
+          {showGrid && [...Array(warehouseSize.gridCount)].map((_, row) =>
+            [...Array(warehouseSize.gridCount)].map((_, col) => (
+              <Rect
+                key={`cell-${row}-${col}`}
+                x={col * cellSize}
+                y={row * cellSize}
+                width={cellSize}
+                height={cellSize}
+                stroke="#ccc"
+              />
+            ))
+          )}
           {shelves.map((shelf) => (
             <Group
               key={shelf.id}
@@ -110,24 +187,22 @@ export default function AlmacenVisual() {
               draggable
               onDragEnd={(e) => moveShelf(e, shelf.id)}
             >
-              <Rect 
-                width={shelf.width} 
-                height={shelf.height} 
-                fill="orange" 
-                stroke="black" 
-                strokeWidth={2} 
+              <Rect
+                width={shelf.width}
+                height={shelf.height}
+                fill="orange"
+                stroke="black"
+                strokeWidth={2}
               />
               <Text
                 text={shelf.id}
-                fontSize={7}
-                x={5}
-                y={5}
-                rotation={shelf.orientation === 'vertical' ? 0 : 0}  // Rotar el texto para estanterías verticales
+                fontSize={10}
+                x={2}
+                y={2}
                 width={shelf.width}
                 height={shelf.height}
-                verticalAlign="middle"
                 align="center"
-                wrap="word"
+                verticalAlign="middle"
               />
             </Group>
           ))}

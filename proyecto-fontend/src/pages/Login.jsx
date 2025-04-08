@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom"; // Importar el hook useNavigate
+import useApi from "../utilities/apiComunicator";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -9,9 +10,11 @@ function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Simular un inicio de sesión exitoso (aquí deberías validar las credenciales)
     if (email && password) {
-      // Redirigir a la página de inicio (Home)
+      const { data, loading, error, setUri, setError } = useApi("/tarea", {});
+
+
+
       navigate("/home");
     } else {
       alert("Por favor, ingresa tus credenciales.");
