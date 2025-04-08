@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import useApi from "../utilities/apiComunicator";
 import HeaderFuncional from "../components/HeaderFuncional";
-
+import { useNavigate } from "react-router-dom";
 const cargarDatos = (data, setParsedData, setCategorias, setError) => {
+  const navigate = useNavigate();
   if (!data) return;
   if (Array.isArray(data)) {
     const productosOrdenados = data.sort(
@@ -24,7 +25,7 @@ const cargarDatos = (data, setParsedData, setCategorias, setError) => {
 };
 
 export default function Inventario() {
-  const { data, loading, error, setUri, setError } = useApi("/producto", {});
+  const { data, loading, error, setUri, setError } = useApi("api/producto", {});
   const [parsedData, setParsedData] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [categoriaFiltro, setCategoriaFiltro] = useState("");

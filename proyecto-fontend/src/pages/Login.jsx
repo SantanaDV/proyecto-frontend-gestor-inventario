@@ -1,21 +1,34 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Importar el hook useNavigate
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import useApi from "../utilities/apiComunicator";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate(); // Obtener el método para navegar
+  const { data, loading, error, setUri, setError, setOptions,currentOptions } = useApi("login", false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (data) {
+      localStorage.setItem("authToken", data.token);
+      navigate("/home");
+    }
+  }, [data, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      alert("Error al iniciar sesión. Por favor, verifica tus credenciales.");
+    }
+  }, [error]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (email && password) {
-      const { data, loading, error, setUri, setError } = useApi("/tarea", {});
-
-
-
-      navigate("/home");
+      setOptions({
+        method: "POST",
+        body: { email, contrasena:password }
+      });
     } else {
       alert("Por favor, ingresa tus credenciales.");
     }
@@ -41,7 +54,7 @@ function Login() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="Introduce direccion de correo"
               value={email}
-              onChange={(e) => setEmail(e.target.value)} // Actualiza el estado del email
+              onChange={(e) => setEmail(e.target.value)} 
             />
           </div>
 
@@ -50,9 +63,9 @@ function Login() {
             <input
               type="password"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              placeholder="Introduce tu constraseñas"
+              placeholder="Introduce tu contraseña"
               value={password}
-              onChange={(e) => setPassword(e.target.value)} // Actualiza el estado de la contraseña
+              onChange={(e) => setPassword(e.target.value)} 
             />
           </div>
 
