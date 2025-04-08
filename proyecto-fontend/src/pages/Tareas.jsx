@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import useApi from "../utilities/apiComunicator";
 import HeaderFuncional from "../components/HeaderFuncional";
+import { useNavigate } from "react-router-dom";
 
 export default function Tareas() {
   const { data, loading, error, setUri, setError } = useApi("/tarea", {});
@@ -18,6 +19,7 @@ export default function Tareas() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [empleadosDisponibles, setEmpleadosDisponibles] = useState([]);
   const [isModalOpenAsignar, setIsModalOpenAsignar] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!data) return;
@@ -131,6 +133,7 @@ export default function Tareas() {
         acciones={{
           Añadir: handleModalOpen,
           "Asignar Usuario": handleModalOpenAsignar,
+          "Calendario": () => navigate("/calendario")
         }}
       />
 

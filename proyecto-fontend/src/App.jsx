@@ -7,6 +7,7 @@ import Estanteria from "./components/Estanteria";
 import Inventario from "./pages/Inventario";
 import Tareas from "./pages/Tareas";
 import Login from "./pages/Login";
+import CalendarioTareas from './pages/Calendar';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function AppContent() {
         <Route path="/estanteria/:id" element={<Estanteria />} />
         <Route path="/inventario" element={<Inventario />} />
         <Route path="/tareas" element={<Tareas />} />
+        <Route path="/calendario" element={<CalendarioTareas />} />
       </Routes>
 
       {location.pathname !== '/' && <Footer />}
