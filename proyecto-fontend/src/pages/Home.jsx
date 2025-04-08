@@ -1,11 +1,14 @@
-import React from 'react'
+import React, { useEffect } from 'react';
 import HeaderFuncional from '../components/HeaderFuncional'
 import { useNavigate } from "react-router-dom";
 export default function Home() {
   const navigate = useNavigate();
-  if (!localStorage.getItem("authToken")) {
-    navigate('/login');
-  }
+
+  useEffect(() => {
+    if (!localStorage.getItem("authToken")) {
+      navigate('/');
+    }
+  }, [navigate]);
   
   return (
     <>
