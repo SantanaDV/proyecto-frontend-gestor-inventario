@@ -4,7 +4,7 @@ import HeaderFuncional from "../components/HeaderFuncional";
 import { useNavigate } from "react-router-dom";
 
 export default function Tareas() {
-  const { data, loading, error, setUri, setError } = useApi("/tarea", {});
+  const { data, loading, error, setUri, setError } = useApi("api/tarea", {});
   const [parsedData, setParsedData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -21,6 +21,12 @@ export default function Tareas() {
   const [isModalOpenAsignar, setIsModalOpenAsignar] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!localStorage.getItem("authToken")) {
+      navigate('/');
+    }
+  }, [navigate]);
+  
   useEffect(() => {
     if (!data) return;
     if (Array.isArray(data)) {

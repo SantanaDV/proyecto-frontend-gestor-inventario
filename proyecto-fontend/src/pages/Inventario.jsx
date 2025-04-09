@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import useApi from "../utilities/apiComunicator";
 import HeaderFuncional from "../components/HeaderFuncional";
+import { useNavigate } from "react-router-dom";
 
 const cargarDatos = (data, setParsedData, setCategorias, setError) => {
+  
   if (!data) return;
   if (Array.isArray(data)) {
     const productosOrdenados = data.sort(
@@ -24,7 +26,8 @@ const cargarDatos = (data, setParsedData, setCategorias, setError) => {
 };
 
 export default function Inventario() {
-  const { data, loading, error, setUri, setError } = useApi("/producto", {});
+  const navigate = useNavigate();
+  const { data, loading, error, setUri, setError } = useApi("api/producto", {});
   const [parsedData, setParsedData] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
@@ -42,10 +45,12 @@ export default function Inventario() {
     fecha_creacion: new Date().toISOString().split("T")[0],
   });
 
-  // Paginación
-  const [paginaActiva, setPaginaActiva] = useState(1);
-  const [paginaDesactivada, setPaginaDesactivada] = useState(1);
-  const productosPorPagina = 3;
+
+  useEffect(() => {
+    if (!localStorage.getItem("authToken")) {
+      navigate('/');
+    }
+  }, [navigate]);
 
   useEffect(() => {
     cargarDatos(data, setParsedData, setCategorias, setError);
@@ -67,54 +72,9 @@ export default function Inventario() {
     (p) => p.estado === "desactivado"
   );
 
-  const indiceInicioActivos = (paginaActiva - 1) * productosPorPagina;
-  const productosActivosPaginados = productosActivos.slice(
-    indiceInicioActivos,
-    indiceInicioActivos + productosPorPagina
-  );
-
-  const indiceInicioDesactivados = (paginaDesactivada - 1) * productosPorPagina;
-  const productosDesactivadosPaginados = productosDesactivados.slice(
-    indiceInicioDesactivados,
-    indiceInicioDesactivados + productosPorPagina
-  );
-
-  const Paginacion = ({ total, actual, setActual }) => {
-    const totalPaginas = Math.ceil(total / productosPorPagina);
-    if (totalPaginas <= 1) return null;
-
-    return (
-      <div className="flex justify-center items-center mt-4 gap-2 flex-wrap">
-        <button
-          onClick={() => setActual((prev) => Math.max(1, prev - 1))}
-          disabled={actual === 1}
-          className="px-3 py-1 border rounded bg-gray-100 hover:bg-gray-200"
-        >
-          Anterior
-        </button>
-        {[...Array(totalPaginas)].map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setActual(i + 1)}
-            className={`px-3 py-1 rounded border ${
-              actual === i + 1 ? "bg-red-500 text-white" : "bg-white"
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
-        <button
-          onClick={() => setActual((prev) => Math.min(totalPaginas, prev + 1))}
-          disabled={actual === totalPaginas}
-          className="px-3 py-1 border rounded bg-gray-100 hover:bg-gray-200"
-        >
-          Siguiente
-        </button>
-      </div>
-    );
+  const handleModalClose = () => {
+    setIsModalOpen(false);
   };
-
-  const handleModalClose = () => setIsModalOpen(false);
 
   const handleModalOpen = () => {
     const sortedData = [...parsedData].sort(
@@ -159,8 +119,11 @@ export default function Inventario() {
 
   const handleSaveProduct = (e) => {
     e.preventDefault();
+
     console.log("Guardando nuevo producto:", newProduct);
+    // Aquí va la lógica para enviar el producto a la API, por ejemplo:
     // useApi.post("/producto", newProduct);
+
     setIsModalOpen(false);
   };
 
@@ -199,10 +162,10 @@ export default function Inventario() {
           <h2 className="text-2xl font-medium text-center mb-4">
             Productos Activos
           </h2>
-          {productosActivosPaginados.length === 0 ? (
+          {productosActivos.length === 0 ? (
             <p>No hay productos activos.</p>
           ) : (
-            productosActivosPaginados.map((producto) => (
+            productosActivos.map((producto) => (
               <div
                 key={producto.id_producto}
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-green-50 p-4 mb-4 flex flex-col items-center"
@@ -242,21 +205,16 @@ export default function Inventario() {
               </div>
             ))
           )}
-          <Paginacion
-            total={productosActivos.length}
-            actual={paginaActiva}
-            setActual={setPaginaActiva}
-          />
         </div>
 
         <div>
           <h2 className="text-2xl font-medium text-center mb-4">
             Productos Desactivados
           </h2>
-          {productosDesactivadosPaginados.length === 0 ? (
+          {productosDesactivados.length === 0 ? (
             <p>No hay productos desactivados.</p>
           ) : (
-            productosDesactivadosPaginados.map((producto) => (
+            productosDesactivados.map((producto) => (
               <div
                 key={producto.id_producto}
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-red-50 p-4 mb-4 flex flex-col items-center"
@@ -296,11 +254,6 @@ export default function Inventario() {
               </div>
             ))
           )}
-          <Paginacion
-            total={productosDesactivados.length}
-            actual={paginaDesactivada}
-            setActual={setPaginaDesactivada}
-          />
         </div>
       </div>
 
@@ -310,8 +263,101 @@ export default function Inventario() {
           <div className="bg-white p-6 rounded-lg w-1/3">
             <h3 className="text-2xl mb-4 text-center">Añadir Producto</h3>
             <form encType="multipart/form-data" onSubmit={handleSaveProduct}>
-              {/* campos del modal (ID, nombre, cantidad, imagen, etc.) */}
-              {/* ... mismos que ya tenías sin cambios ... */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium">ID</label>
+                <input
+                  type="text"
+                  name="id"
+                  value={newProduct.id}
+                  readOnly
+                  className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">Nombre</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={newProduct.nombre}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">Cantidad</label>
+                <input
+                  type="number"
+                  name="cantidad"
+                  value={newProduct.cantidad}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Imagen</label>
+
+                <div className="flex items-center space-x-4">
+                  <label
+                    htmlFor="fileUpload"
+                    className="bg-red-700 opacity-75 text-white px-4 py-2 rounded cursor-pointer hover:bg-red-900 transition"
+                  >
+                    Seleccionar archivo
+                  </label>
+
+                  <span className="text-sm text-gray-600">
+                    {selectedFileName || "Ningún archivo seleccionado"}
+                  </span>
+                </div>
+
+                <input
+                  id="fileUpload"
+                  type="file"
+                  name="url_img"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Estado</label>
+                <select
+                  name="estado"
+                  value={newProduct.estado}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                >
+                  <option value="activo">Activo</option>
+                  <option value="desactivado">Desactivado</option>
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">Código QR</label>
+                <input
+                  type="text"
+                  name="codigoQr"
+                  value={newProduct.codigoQr}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">
+                  Fecha de Creación
+                </label>
+                <input
+                  type="date"
+                  name="fecha_asignacion"
+                  value={newProduct.fecha_creacion}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
+
               <div className="flex justify-between">
                 <button
                   onClick={handleModalClose}
