@@ -2,34 +2,34 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const useApi = (endpoint, options = {}) => {
-  const baseUrl = 'http://localhost:8080/';
-  const [uri, setUri] = useState(`${baseUrl}${endpoint}`);
+  const baseUrl = 'http://localhost:8080/api'; 
+  const [uri, setUri] = useState(`${baseUrl}${endpoint}`); 
+  
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentOptions, setCurrentOptions] = useState(options);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!uri || !currentOptions) return;
+      if (!uri) return;
 
       try {
-        setLoading(true);
+        setLoading(true); // Empezamos a cargar
         const response = await axios({
           url: uri,
-          method: currentOptions.method || 'GET',
+          method: options.method || 'GET',
           headers: {
             'Content-Type': 'application/json',
-            ...(currentOptions.headers || {}),
+            ...(options.headers || {}),
           },
           withCredentials: true,
-          data: currentOptions.body || undefined,
+          data: options.body || undefined,
         });
 
-        setData(response.data);
-        setError(null);
+        setData(response.data); // Establecemos los datos
+        setError(null); // Limpia errores previos
       } catch (err) {
-        console.error("Error during request:", err);
+        console.error("Axios Error:", err);
         if (err.response) {
           setError(`Error ${err.response.status}: ${err.response.data}`);
         } else if (err.request) {
@@ -37,17 +37,16 @@ const useApi = (endpoint, options = {}) => {
         } else {
           setError(err.message);
         }
-        setData(null);
+        setData(null); // Evita mostrar datos erróneos
       } finally {
-        setLoading(false);
+        setLoading(false); // Termina el estado de carga
       }
     };
 
-    fetchData();
-  }, [uri, currentOptions]); // Trigger on change of uri or options
+    fetchData(); // Llamamos la función para hacer la solicitud
+  }, []); // Solo se ejecuta una vez, cuando el componente se monta
 
-  return { data, loading, error, setUri, setError, setOptions: setCurrentOptions,currentOptions };
+  return { data, loading, error, setUri,setError }; 
 };
-
 
 export default useApi;
