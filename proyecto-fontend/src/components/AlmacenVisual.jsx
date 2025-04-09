@@ -11,7 +11,7 @@ export default function AlmacenVisual() {
     const savedSize = localStorage.getItem("warehouseSize");
     const savedShelves = JSON.parse(localStorage.getItem("shelves") || "[]");
     if (savedSize) {
-      setWarehouseSize(savedSize);
+      setWarehouseSize(JSON.parse(savedSize));
     }
     setShelves(savedShelves);
   }, []);
@@ -34,25 +34,25 @@ export default function AlmacenVisual() {
       return;
     }
     setShowError(false);
-    const size = { gridCount: n };
-    setWarehouseSize(size);
+    setWarehouseSize({ gridCount: n });
   };
 
   const addShelf = (orientation = "horizontal") => {
     const newShelf = {
       id: `Estantería-${Date.now()}`,
       orientation,
-      position: { row: 0, col: shelves.length }, // Simple logic for positions
+      position: { row: 0, col: 0 },
     };
     setShelves([...shelves, newShelf]);
   };
 
-  const moveShelf = (id, newRow, newCol) => {
+  const moveShelf = (id, newRow, newCol, newOrientation = null) => {
     const updatedShelves = shelves.map((shelf) => {
       if (shelf.id === id) {
         return {
           ...shelf,
           position: { row: newRow, col: newCol },
+          orientation: newOrientation || shelf.orientation,
         };
       }
       return shelf;
@@ -69,25 +69,52 @@ export default function AlmacenVisual() {
   };
 
   const onDragStart = (e, shelf) => {
-    e.dataTransfer.setData("shelfId", shelf.id); // Store the ID of the shelf being dragged
+    e.dataTransfer.setData("shelfId", shelf.id);
   };
 
   const onDragOver = (e) => {
-    e.preventDefault(); // Prevent default to allow dropping
+    e.preventDefault();
   };
 
   const onDrop = (e, row, col) => {
     e.preventDefault();
-    const shelfId = e.dataTransfer.getData("shelfId"); // Get the ID of the dragged shelf
-    const shelf = shelves.find((shelf) => shelf.id === shelfId);
-    if (shelf) {
-      moveShelf(shelf.id, row, col);
+    const shelfId = e.dataTransfer.getData("shelfId");
+    const shelf = shelves.find((s) => s.id === shelfId);
+    if (!shelf) return;
+
+    const fitsInBounds =
+      shelf.orientation === "horizontal"
+        ? col + 1 < warehouseSize.gridCount
+        : row + 1 < warehouseSize.gridCount;
+
+    if (!fitsInBounds) return;
+
+    const conflict = shelves.some((other) => {
+      if (other.id === shelf.id) return false;
+      const { row: or, col: oc, orientation: oo } = other;
+
+      if (oo === "horizontal") {
+        return (
+          (or === row && (oc === col || oc + 1 === col)) ||
+          (or === row && oc === col - 1)
+        );
+      } else {
+        return (
+          (oc === col && (or === row || or + 1 === row)) ||
+          (oc === col && or === row - 1)
+        );
+      }
+    });
+
+    let updatedShelf = { ...shelf };
+    if (conflict && shelf.orientation === "horizontal") {
+      updatedShelf.orientation = "vertical";
     }
+
+    moveShelf(updatedShelf.id, row, col, updatedShelf.orientation);
   };
 
-  const toggleGrid = () => {
-    setShowGrid(!showGrid);
-  };
+  const toggleGrid = () => setShowGrid(!showGrid);
 
   if (!warehouseSize) {
     return (
@@ -105,7 +132,11 @@ export default function AlmacenVisual() {
         <button type="submit" className="mt-4 bg-blue-500 text-white px-4 py-2">
           Crear Almacén
         </button>
-        {showError && <p className="text-red-500 mt-2">Por favor, ingresa un número válido.</p>}
+        {showError && (
+          <p className="text-red-500 mt-2">
+            Por favor, ingresa un número válido.
+          </p>
+        )}
       </form>
     );
   }
@@ -113,63 +144,72 @@ export default function AlmacenVisual() {
   return (
     <div>
       <div className="p-2 space-x-2">
-        <button onClick={() => addShelf("horizontal")} className="bg-green-500 text-white px-3 py-1">
+        <button
+          onClick={() => addShelf("horizontal")}
+          className="bg-green-500 text-white px-3 py-1"
+        >
           Agregar Estantería Horizontal
         </button>
-        <button onClick={() => addShelf("vertical")} className="bg-blue-500 text-white px-3 py-1">
+        <button
+          onClick={() => addShelf("vertical")}
+          className="bg-blue-500 text-white px-3 py-1"
+        >
           Agregar Estantería Vertical
         </button>
-        <button onClick={resetWarehouse} className="bg-red-500 text-white px-3 py-1 ml-4">
+        <button
+          onClick={resetWarehouse}
+          className="bg-red-500 text-white px-3 py-1 ml-4"
+        >
           Resetear Almacén
         </button>
-        <button onClick={toggleGrid} className="bg-yellow-500 text-white px-3 py-1 ml-4">
+        <button
+          onClick={toggleGrid}
+          className="bg-yellow-500 text-white px-3 py-1 ml-4"
+        >
           {showGrid ? "Ocultar Cuadrícula" : "Mostrar Cuadrícula"}
         </button>
       </div>
 
       {showGrid && (
-        <table
-          className="border-collapse"
-          style={{ width: "100%", tableLayout: "fixed" }}
-        >
+        <table className="border-collapse w-full table-fixed">
           <tbody>
-            {[...Array(warehouseSize.gridCount)].map((_, row) => (
-              <tr key={row}>
-                {[...Array(warehouseSize.gridCount)].map((_, col) => (
-                  <td
-                    key={`${row}-${col}`}
-                    style={{
-                      border: "1px solid #ccc",
-                      width: `${100 / warehouseSize.gridCount}%`,
-                      height: "50px",
-                      position: "relative",
-                    }}
-                    onDragOver={onDragOver}
-                    onDrop={(e) => onDrop(e, row, col)}
-                  >
-                    {shelves.map(
-                      (shelf) =>
-                        shelf.position.row === row && shelf.position.col === col && (
-                          <div
-                            key={shelf.id}
-                            className={`absolute ${shelf.orientation === "horizontal" ? "w-20" : "w-10"} ${
-                              shelf.orientation === "vertical" ? "h-20" : "h-10"
-                            } bg-orange-500`}
+            {(() => {
+              const gridCount = warehouseSize.gridCount;
+              return [...Array(gridCount)].map((_, row) => (
+                <tr key={row}>
+                  {[...Array(gridCount)].map((_, col) => {
+                    const shelf = shelves.find(
+                      (s) => s.position.row === row && s.position.col === col
+                    );
+
+                    const isShelf = !!shelf;
+                    const isHorizontal = shelf?.orientation === "horizontal";
+                    const isVertical = shelf?.orientation === "vertical";
+
+                    return (
+                      <td
+                        key={`${row}-${col}`}
+                        className={`border transition-all duration-300 ease-in-out 
+                          ${isShelf ? (isHorizontal ? "w-40 h-12" : "w-20 h-24") : "w-40 h-12"}
+                        `}
+                        onDragOver={onDragOver}
+                        onDrop={(e) => onDrop(e, row, col)}
+                      >
+                        {isShelf && (
+                          <label
                             draggable
                             onDragStart={(e) => onDragStart(e, shelf)}
+                            className="block w-full h-full bg-orange-500 text-white text-xs text-center flex justify-center items-center cursor-move"
                           >
-                            <span
-                              className="text-white text-xs absolute inset-0 flex justify-center items-center"
-                            >
-                              {shelf.id}
-                            </span>
-                          </div>
-                        )
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))}
+                            {shelf.id}
+                          </label>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ));
+            })()}
           </tbody>
         </table>
       )}
