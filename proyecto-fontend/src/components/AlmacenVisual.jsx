@@ -285,13 +285,13 @@ export default function AlmacenVisual() {
           {showGrid ? "Ocultar Cuadrícula" : "Mostrar Cuadrícula"}
         </button>
       </div>
-
+  
       {/* Modal */}
       {selectedShelf && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg w-1/3">
             <h2 className="text-xl font-semibold mb-4">Detalles de la Estantería</h2>
-
+  
             <div className="mb-4">
               <label className="block text-sm font-medium">ID</label>
               <input
@@ -301,7 +301,6 @@ export default function AlmacenVisual() {
                 className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
               />
             </div>
-            {/* Aquí puedes añadir más campos, como los que mencionaste en tu modal */}
             <button
               onClick={closeModal}
               className="bg-gray-500 text-white px-4 py-2 rounded"
@@ -311,50 +310,53 @@ export default function AlmacenVisual() {
           </div>
         </div>
       )}
-
-      <table className="border-collapse w-full table-fixed">
-        <tbody>
-          {[...Array(warehouseSize.rows)].map((_, row) => (
-            <tr key={row}>
-              {[...Array(warehouseSize.cols)].map((_, col) => {
-                const shelf = shelves.find(
-                  (s) => s.position.row === row && s.position.col === col
-                );
-                const isShelf = !!shelf;
-                const isHorizontal = shelf?.orientation === "horizontal";
-                const isVertical = shelf?.orientation === "vertical";
-
-                return (
-                  <td
-                    key={`${row}-${col}`}
-                    className={`w-24 h-24 text-center align-middle transition-all duration-200 ${
-                      showGrid ? "border bg-white" : "border-0 bg-white"
-                    }`}
-                    onDragOver={onDragOver}
-                    onDrop={(e) => onDrop(e, row, col)}
-                  >
-                    {isShelf && (
-                      <div
-                        className={`inline-block justify-center items-center bg-orange-500 text-white text-xs cursor-pointer rounded shadow
-                          ${isHorizontal ? "w-4/5 h-3/5" : "w-2/5 h-4/5"}`}
-                        style={{ margin: "auto", padding: "5px" }} // Margin interior añadido
-                        onClick={(e) => {
-                          e.stopPropagation(); // Evita que el click en el contenedor dispare el onClick del td
-                          openModal(shelf);
-                        }}
-                        draggable
-                        onDragStart={(e) => onDragStart(e, shelf)}
-                      >
-                        {shelf.id}
-                      </div>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  
+      {/* Contenedor con desplazamiento horizontal */}
+      <div className="overflow-x-auto">
+        <table className="border-collapse w-full min-w-max table-fixed">
+          <tbody>
+            {[...Array(warehouseSize.rows)].map((_, row) => (
+              <tr key={row}>
+                {[...Array(warehouseSize.cols)].map((_, col) => {
+                  const shelf = shelves.find(
+                    (s) => s.position.row === row && s.position.col === col
+                  );
+                  const isShelf = !!shelf;
+                  const isHorizontal = shelf?.orientation === "horizontal";
+                  const isVertical = shelf?.orientation === "vertical";
+  
+                  return (
+                    <td
+                      key={`${row}-${col}`}
+                      className={`w-24 h-24 text-center align-middle transition-all duration-200 ${
+                        showGrid ? "border bg-white" : "border-0 bg-white"
+                      }`}
+                      onDragOver={onDragOver}
+                      onDrop={(e) => onDrop(e, row, col)}
+                    >
+                      {isShelf && (
+                        <div
+                          className={`inline-block justify-center items-center bg-orange-500 text-white text-xs cursor-pointer rounded shadow
+                            ${isHorizontal ? "w-4/5 h-3/5" : "w-2/5 h-4/5"}`}
+                          style={{ margin: "auto", padding: "5px" }} // Margin interior añadido
+                          onClick={(e) => {
+                            e.stopPropagation(); // Evita que el click en el contenedor dispare el onClick del td
+                            openModal(shelf);
+                          }}
+                          draggable
+                          onDragStart={(e) => onDragStart(e, shelf)}
+                        >
+                          {shelf.id}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
-}
+}  
