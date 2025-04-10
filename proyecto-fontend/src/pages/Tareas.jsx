@@ -4,7 +4,7 @@ import HeaderFuncional from "../components/HeaderFuncional";
 import { useNavigate } from "react-router-dom";
 
 export default function Tareas() {
-  const { data, loading, error, setUri, setError } = useApi("/tarea", {});
+  const { data, loading, error, setUri, setError } = useApi("api/tarea", {});
   const [parsedData, setParsedData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTask, setNewTask] = useState({

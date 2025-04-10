@@ -28,7 +28,7 @@ const cargarDatos = (data, setParsedData, setCategorias, setError) => {
 
 export default function Inventario() {
   const navigate = useNavigate();
-  const { data, loading, error, setUri, setError } = useApi("/producto", {});
+  const { data, loading, error, setUri, setError } = useApi("api/producto", {});
   const [parsedData, setParsedData] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
