@@ -6,6 +6,7 @@ export default function AlmacenVisual() {
   const [shelves, setShelves] = useState([]);
   const [showError, setShowError] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
+  const [selectedShelf, setSelectedShelf] = useState(null);
 
   useEffect(() => {
     const savedSize = localStorage.getItem("warehouseSize");
@@ -56,8 +57,8 @@ export default function AlmacenVisual() {
       for (let col = 0; col < warehouseSize.gridCount; col++) {
         const fits =
           orientation === "horizontal"
-            ? col < warehouseSize.gridCount - 1
-            : row < warehouseSize.gridCount - 1;
+            ? col < warehouseSize.gridCount
+            : row < warehouseSize.gridCount;
 
         if (!fits) continue;
 
@@ -122,6 +123,14 @@ export default function AlmacenVisual() {
     setGridSize("");
   };
 
+  const openModal = (shelf) => {
+    setSelectedShelf(shelf);
+  };
+
+  const closeModal = () => {
+    setSelectedShelf(null);
+  };
+
   const onDragStart = (e, shelf) => {
     e.dataTransfer.setData("shelfId", shelf.id);
   };
@@ -130,38 +139,53 @@ export default function AlmacenVisual() {
     e.preventDefault();
   };
 
+  const isConflict = (id, newRow, newCol, orientation) => {
+    return shelves.some((other) => {
+      if (other.id === id) return false;
+
+      const or = other.position.row;
+      const oc = other.position.col;
+      const oo = other.orientation;
+
+      const occupiedCells = [];
+      if (oo === "horizontal") {
+        occupiedCells.push([or, oc], [or, oc]); // Horizontal ocupa la columna y la siguiente
+      } else {
+        occupiedCells.push([or, oc], [or , oc]); // Vertical ocupa la fila y la siguiente
+      }
+
+      const newCells = [];
+      if (orientation === "horizontal") {
+        newCells.push([newRow, newCol], [newRow, newCol]); // Horizontal ocupa la columna y la siguiente
+      } else {
+        newCells.push([newRow, newCol], [newRow, newCol]); // Vertical ocupa la fila y la siguiente
+      }
+
+      // Verificar conflictos
+      return newCells.some(([r, c]) =>
+        occupiedCells.some(([or, oc]) => or === r && oc === c)
+      );
+    });
+  };
+
   const onDrop = (e, row, col) => {
     e.preventDefault();
     const shelfId = e.dataTransfer.getData("shelfId");
     const shelf = shelves.find((s) => s.id === shelfId);
     if (!shelf) return;
 
+    const orientation = shelf.orientation;
+
+    // Revisar si hay suficiente espacio para la estantería
     const fitsInBounds =
-      shelf.orientation === "horizontal"
-        ? col < warehouseSize.gridCount - 1
-        : row < warehouseSize.gridCount - 1;
+      orientation === "horizontal"
+        ? col + 1 < warehouseSize.gridCount+1 // Solo revisamos dos columnas (col y col+1)
+        : row + 1 < warehouseSize.gridCount;
 
     if (!fitsInBounds) return;
 
-    const conflict = shelves.some((other) => {
-      if (other.id === shelf.id) return false;
-      const { row: or, col: oc } = other.position;
-      const oo = other.orientation;
-
-      if (oo === "horizontal") {
-        return (
-          (or === row && (oc === col || oc + 1 === col)) ||
-          (or === row && oc === col - 1)
-        );
-      } else {
-        return (
-          (oc === col && (or === row || or + 1 === row)) ||
-          (oc === col && or === row - 1)
-        );
-      }
-    });
-
-    if (conflict) return;
+    // Comprobamos si hay conflictos con otras estanterías
+    if (isConflict(shelf.id, row, col, orientation)) return;
 
     moveShelf(shelf.id, row, col);
   };
@@ -222,6 +246,32 @@ export default function AlmacenVisual() {
         </button>
       </div>
 
+      {/* Modal */}
+      {selectedShelf && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg w-1/3">
+            <h2 className="text-xl font-semibold mb-4">Detalles de la Estantería</h2>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium">ID</label>
+              <input
+                type="text"
+                value={selectedShelf.id}
+                readOnly
+                className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
+              />
+            </div>
+            {/* Aquí puedes añadir más campos, como los que mencionaste en tu modal */}
+            <button
+              onClick={closeModal}
+              className="bg-gray-500 text-white px-4 py-2 rounded"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
       <table className="border-collapse w-full table-fixed">
         <tbody>
           {[...Array(warehouseSize.gridCount)].map((_, row) => (
@@ -244,16 +294,14 @@ export default function AlmacenVisual() {
                     onDrop={(e) => onDrop(e, row, col)}
                   >
                     {isShelf && (
-                      <label
-                        draggable
-                        onDragStart={(e) => onDragStart(e, shelf)}
-                        className={`inline-flex justify-center items-center bg-orange-500 text-white text-xs cursor-move rounded shadow
-                          ${isHorizontal ? "w-4/5 h-3/5" : "w-2/5 h-4/5"}
-                        `}
+                      <button
+                        onClick={() => openModal(shelf)}
+                        className={`inline-flex justify-center items-center bg-orange-500 text-white text-xs cursor-pointer rounded shadow
+                          ${isHorizontal ? "w-4/5 h-3/5" : "w-2/5 h-4/5"}`}
                         style={{ margin: "auto" }}
                       >
                         {shelf.id}
-                      </label>
+                      </button>
                     )}
                   </td>
                 );
