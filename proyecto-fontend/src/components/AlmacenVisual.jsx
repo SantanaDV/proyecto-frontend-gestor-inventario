@@ -301,16 +301,7 @@ export default function AlmacenVisual() {
                           ${isHorizontal ? "w-4/5 h-3/5" : "w-2/5 h-4/5"}`}
                         style={{ margin: "auto" }}
                       >
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevenir que el click active el arrastre
-                            openModal(shelf);
-                          }}
-                          className="bg-transparent text-white w-full h-full"
-                        >
-                          {shelf.id}
-                        </button>
+                        {shelf.id}
                       </label>
                     )}
                   </td>
