@@ -10,9 +10,17 @@ export default function AlmacenVisual() {
   useEffect(() => {
     const savedSize = localStorage.getItem("warehouseSize");
     const savedShelves = JSON.parse(localStorage.getItem("shelves") || "[]");
+
     if (savedSize) {
-      setWarehouseSize(JSON.parse(savedSize));
+      try {
+        const parsedSize = JSON.parse(savedSize);
+        setWarehouseSize(parsedSize);
+        setGridSize(parsedSize.gridCount.toString());
+      } catch (error) {
+        console.error("Error al parsear warehouseSize", error);
+      }
     }
+
     setShelves(savedShelves);
   }, []);
 
@@ -38,25 +46,71 @@ export default function AlmacenVisual() {
   };
 
   const addShelf = (orientation = "horizontal") => {
+    if (!warehouseSize) return;
+
+    let found = false;
+    let newRow = 0;
+    let newCol = 0;
+
+    for (let row = 0; row < warehouseSize.gridCount; row++) {
+      for (let col = 0; col < warehouseSize.gridCount; col++) {
+        const fits =
+          orientation === "horizontal"
+            ? col < warehouseSize.gridCount - 1
+            : row < warehouseSize.gridCount - 1;
+
+        if (!fits) continue;
+
+        const conflict = shelves.some((s) => {
+          const { row: sr, col: sc } = s.position;
+          const so = s.orientation;
+
+          if (so === "horizontal") {
+            return (
+              (sr === row && sc === col) ||
+              (sr === row && sc === col + 1)
+            );
+          } else {
+            return (
+              (sc === col && sr === row) ||
+              (sc === col && sr === row + 1)
+            );
+          }
+        });
+
+        if (!conflict) {
+          newRow = row;
+          newCol = col;
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+
+    if (!found) {
+      alert("No hay espacio disponible para una nueva estantería.");
+      return;
+    }
+
     const newShelf = {
       id: `Estantería-${Date.now()}`,
       orientation,
-      position: { row: 0, col: 0 },
+      position: { row: newRow, col: newCol },
     };
     setShelves([...shelves, newShelf]);
   };
 
   const moveShelf = (id, newRow, newCol, newOrientation = null) => {
-    const updatedShelves = shelves.map((shelf) => {
-      if (shelf.id === id) {
-        return {
-          ...shelf,
-          position: { row: newRow, col: newCol },
-          orientation: newOrientation || shelf.orientation,
-        };
-      }
-      return shelf;
-    });
+    const updatedShelves = shelves.map((shelf) =>
+      shelf.id === id
+        ? {
+            ...shelf,
+            position: { row: newRow, col: newCol },
+            orientation: newOrientation || shelf.orientation,
+          }
+        : shelf
+    );
     setShelves(updatedShelves);
   };
 
@@ -84,14 +138,15 @@ export default function AlmacenVisual() {
 
     const fitsInBounds =
       shelf.orientation === "horizontal"
-        ? col + 1 < warehouseSize.gridCount
-        : row + 1 < warehouseSize.gridCount;
+        ? col < warehouseSize.gridCount - 1
+        : row < warehouseSize.gridCount - 1;
 
     if (!fitsInBounds) return;
 
     const conflict = shelves.some((other) => {
       if (other.id === shelf.id) return false;
-      const { row: or, col: oc, orientation: oo } = other;
+      const { row: or, col: oc } = other.position;
+      const oo = other.orientation;
 
       if (oo === "horizontal") {
         return (
@@ -106,20 +161,17 @@ export default function AlmacenVisual() {
       }
     });
 
-    let updatedShelf = { ...shelf };
-    if (conflict && shelf.orientation === "horizontal") {
-      updatedShelf.orientation = "vertical";
-    }
+    if (conflict) return;
 
-    moveShelf(updatedShelf.id, row, col, updatedShelf.orientation);
+    moveShelf(shelf.id, row, col);
   };
 
   const toggleGrid = () => setShowGrid(!showGrid);
 
-  if (!warehouseSize) {
+  if (!warehouseSize || !warehouseSize.gridCount) {
     return (
       <form onSubmit={handleGridSubmit} className="p-4">
-        <label className="block">
+        <label className="block mb-2">
           Tamaño de la cuadrícula (NxN):
           <input
             type="number"
@@ -170,49 +222,46 @@ export default function AlmacenVisual() {
         </button>
       </div>
 
-      {showGrid && (
-        <table className="border-collapse w-full table-fixed">
-          <tbody>
-            {(() => {
-              const gridCount = warehouseSize.gridCount;
-              return [...Array(gridCount)].map((_, row) => (
-                <tr key={row}>
-                  {[...Array(gridCount)].map((_, col) => {
-                    const shelf = shelves.find(
-                      (s) => s.position.row === row && s.position.col === col
-                    );
+      <table className="border-collapse w-full table-fixed">
+        <tbody>
+          {[...Array(warehouseSize.gridCount)].map((_, row) => (
+            <tr key={row}>
+              {[...Array(warehouseSize.gridCount)].map((_, col) => {
+                const shelf = shelves.find(
+                  (s) => s.position.row === row && s.position.col === col
+                );
+                const isShelf = !!shelf;
+                const isHorizontal = shelf?.orientation === "horizontal";
+                const isVertical = shelf?.orientation === "vertical";
 
-                    const isShelf = !!shelf;
-                    const isHorizontal = shelf?.orientation === "horizontal";
-                    const isVertical = shelf?.orientation === "vertical";
-
-                    return (
-                      <td
-                        key={`${row}-${col}`}
-                        className={`border transition-all duration-300 ease-in-out 
-                          ${isShelf ? (isHorizontal ? "w-40 h-12" : "w-20 h-24") : "w-40 h-12"}
+                return (
+                  <td
+                    key={`${row}-${col}`}
+                    className={`w-24 h-24 text-center align-middle transition-all duration-200 ${
+                      showGrid ? "border bg-white" : "border-0 bg-white"
+                    }`}
+                    onDragOver={onDragOver}
+                    onDrop={(e) => onDrop(e, row, col)}
+                  >
+                    {isShelf && (
+                      <label
+                        draggable
+                        onDragStart={(e) => onDragStart(e, shelf)}
+                        className={`inline-flex justify-center items-center bg-orange-500 text-white text-xs cursor-move rounded shadow
+                          ${isHorizontal ? "w-4/5 h-3/5" : "w-2/5 h-4/5"}
                         `}
-                        onDragOver={onDragOver}
-                        onDrop={(e) => onDrop(e, row, col)}
+                        style={{ margin: "auto" }}
                       >
-                        {isShelf && (
-                          <label
-                            draggable
-                            onDragStart={(e) => onDragStart(e, shelf)}
-                            className="block w-full h-full bg-orange-500 text-white text-xs text-center flex justify-center items-center cursor-move"
-                          >
-                            {shelf.id}
-                          </label>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ));
-            })()}
-          </tbody>
-        </table>
-      )}
+                        {shelf.id}
+                      </label>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

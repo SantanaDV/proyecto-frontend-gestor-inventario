@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import useApi from "../utilities/apiComunicator";
 import HeaderFuncional from "../components/HeaderFuncional";
+import { useNavigate } from "react-router-dom";
 
 const cargarDatos = (data, setParsedData, setCategorias, setError) => {
+  
   if (!data) return;
+
   if (Array.isArray(data)) {
     const productosOrdenados = data.sort(
       (a, b) => a.nombre?.localeCompare(b.nombre) || 0
@@ -24,6 +27,7 @@ const cargarDatos = (data, setParsedData, setCategorias, setError) => {
 };
 
 export default function Inventario() {
+  const navigate = useNavigate();
   const { data, loading, error, setUri, setError } = useApi("/producto", {});
   const [parsedData, setParsedData] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -46,6 +50,13 @@ export default function Inventario() {
   const [paginaActiva, setPaginaActiva] = useState(1);
   const [paginaDesactivada, setPaginaDesactivada] = useState(1);
   const productosPorPagina = 3;
+
+  useEffect(() => {
+    if (!localStorage.getItem("authToken")) {
+      navigate('/');
+    }
+  }, [navigate]);
+
 
   useEffect(() => {
     cargarDatos(data, setParsedData, setCategorias, setError);
