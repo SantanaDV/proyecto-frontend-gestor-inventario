@@ -22,6 +22,13 @@ export default function Tareas() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!localStorage.getItem("authToken")) {
+      navigate('/');
+    }
+  }, [navigate]);
+
+
+  useEffect(() => {
     if (!data) return;
     if (Array.isArray(data)) {
       setParsedData(data);
