@@ -294,15 +294,19 @@ export default function AlmacenVisual() {
                     onDrop={(e) => onDrop(e, row, col)}
                   >
                     {isShelf && (
-                      <label
-                        onDragStart={(e) => onDragStart(e, shelf)}
-                        draggable
+                      <div
                         className={`inline-block justify-center items-center bg-orange-500 text-white text-xs cursor-pointer rounded shadow
                           ${isHorizontal ? "w-4/5 h-3/5" : "w-2/5 h-4/5"}`}
-                        style={{ margin: "auto" }}
+                        style={{ margin: "auto", padding: "5px" }} // Margin interior añadido
+                        onClick={(e) => {
+                          e.stopPropagation(); // Evita que el click en el contenedor dispare el onClick del td
+                          openModal(shelf);
+                        }}
+                        draggable
+                        onDragStart={(e) => onDragStart(e, shelf)}
                       >
                         {shelf.id}
-                      </label>
+                      </div>
                     )}
                   </td>
                 );
