@@ -13,11 +13,14 @@ export default function AlmacenVisual() {
 
     if (savedSize) {
       try {
-        setWarehouseSize(JSON.parse(savedSize));
+        const parsedSize = JSON.parse(savedSize);
+        setWarehouseSize(parsedSize);
+        setGridSize(parsedSize.gridCount.toString());
       } catch (error) {
         console.error("Error al parsear warehouseSize", error);
       }
     }
+
     setShelves(savedShelves);
   }, []);
 
@@ -43,6 +46,8 @@ export default function AlmacenVisual() {
   };
 
   const addShelf = (orientation = "horizontal") => {
+    if (!warehouseSize) return;
+
     let found = false;
     let newRow = 0;
     let newCol = 0;
@@ -57,7 +62,8 @@ export default function AlmacenVisual() {
         if (!fits) continue;
 
         const conflict = shelves.some((s) => {
-          const { row: sr, col: sc, orientation: so } = s;
+          const { row: sr, col: sc } = s.position;
+          const so = s.orientation;
 
           if (so === "horizontal") {
             return (
@@ -139,7 +145,8 @@ export default function AlmacenVisual() {
 
     const conflict = shelves.some((other) => {
       if (other.id === shelf.id) return false;
-      const { row: or, col: oc, orientation: oo } = other;
+      const { row: or, col: oc } = other.position;
+      const oo = other.orientation;
 
       if (oo === "horizontal") {
         return (
@@ -154,17 +161,14 @@ export default function AlmacenVisual() {
       }
     });
 
-    let updatedShelf = { ...shelf };
-    if (conflict && shelf.orientation === "horizontal") {
-      updatedShelf.orientation = "vertical";
-    }
+    if (conflict) return;
 
-    moveShelf(updatedShelf.id, row, col, updatedShelf.orientation);
+    moveShelf(shelf.id, row, col);
   };
 
   const toggleGrid = () => setShowGrid(!showGrid);
 
-  if (!warehouseSize) {
+  if (!warehouseSize || !warehouseSize.gridCount) {
     return (
       <form onSubmit={handleGridSubmit} className="p-4">
         <label className="block mb-2">
