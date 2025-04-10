@@ -139,35 +139,6 @@ export default function AlmacenVisual() {
     e.preventDefault();
   };
 
-  const isConflict = (id, newRow, newCol, orientation) => {
-    return shelves.some((other) => {
-      if (other.id === id) return false;
-
-      const or = other.position.row;
-      const oc = other.position.col;
-      const oo = other.orientation;
-
-      const occupiedCells = [];
-      if (oo === "horizontal") {
-        occupiedCells.push([or, oc], [or, oc]); // Horizontal ocupa la columna y la siguiente
-      } else {
-        occupiedCells.push([or, oc], [or , oc]); // Vertical ocupa la fila y la siguiente
-      }
-
-      const newCells = [];
-      if (orientation === "horizontal") {
-        newCells.push([newRow, newCol], [newRow, newCol]); // Horizontal ocupa la columna y la siguiente
-      } else {
-        newCells.push([newRow, newCol], [newRow, newCol]); // Vertical ocupa la fila y la siguiente
-      }
-
-      // Verificar conflictos
-      return newCells.some(([r, c]) =>
-        occupiedCells.some(([or, oc]) => or === r && oc === c)
-      );
-    });
-  };
-
   const onDrop = (e, row, col) => {
     e.preventDefault();
     const shelfId = e.dataTransfer.getData("shelfId");
@@ -179,16 +150,58 @@ export default function AlmacenVisual() {
     // Revisar si hay suficiente espacio para la estantería
     const fitsInBounds =
       orientation === "horizontal"
-        ? col + 1 < warehouseSize.gridCount+1 // Solo revisamos dos columnas (col y col+1)
-        : row + 1 < warehouseSize.gridCount;
+        ? col < warehouseSize.gridCount // Horizontal ocupa solo una celda
+        : row < warehouseSize.gridCount; // Vertical ocupa solo una celda
 
-    if (!fitsInBounds) return;
+    if (!fitsInBounds) {
+      console.log(`La estantería no cabe en los límites de la cuadrícula: ${orientation} en ${row}, ${col}`);
+      return;
+    }
 
     // Comprobamos si hay conflictos con otras estanterías
-    if (isConflict(shelf.id, row, col, orientation)) return;
+    if (isConflict(shelf.id, row, col, orientation)) {
+      console.log(`Conflicto al mover la estantería ${shelf.id} a la casilla ${row}, ${col}`);
+      return;
+    }
 
     moveShelf(shelf.id, row, col);
-  };
+};
+
+const isConflict = (id, newRow, newCol, orientation) => {
+    return shelves.some((other) => {
+      if (other.id === id) return false;
+
+      const or = other.position.row;
+      const oc = other.position.col;
+      const oo = other.orientation;
+
+      const occupiedCells = [];
+      if (oo === "horizontal") {
+        occupiedCells.push([or, oc]); // Horizontal ocupa solo una celda
+      } else {
+        occupiedCells.push([or, oc]); // Vertical ocupa solo una celda
+      }
+
+      const newCells = [];
+      if (orientation === "horizontal") {
+        newCells.push([newRow, newCol]); // Horizontal ocupa solo una celda
+      } else {
+        newCells.push([newRow, newCol]); // Vertical ocupa solo una celda
+      }
+
+      // Verificar conflictos
+      const conflictFound = newCells.some(([r, c]) =>
+        occupiedCells.some(([or, oc]) => or === r && oc === c)
+      );
+
+      if (conflictFound) {
+        console.log(`Conflicto: Estantería de ID ${id} intenta ocupar la misma celda que la estantería de ID ${other.id} en [${newRow}, ${newCol}]`);
+      }
+
+      return conflictFound;
+    });
+};
+
 
   const toggleGrid = () => setShowGrid(!showGrid);
 
