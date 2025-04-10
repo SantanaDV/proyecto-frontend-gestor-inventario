@@ -294,14 +294,24 @@ export default function AlmacenVisual() {
                     onDrop={(e) => onDrop(e, row, col)}
                   >
                     {isShelf && (
-                      <button
-                        onClick={() => openModal(shelf)}
-                        className={`inline-flex justify-center items-center bg-orange-500 text-white text-xs cursor-pointer rounded shadow
+                      <label
+                        onDragStart={(e) => onDragStart(e, shelf)}
+                        draggable
+                        className={`inline-block justify-center items-center bg-orange-500 text-white text-xs cursor-pointer rounded shadow
                           ${isHorizontal ? "w-4/5 h-3/5" : "w-2/5 h-4/5"}`}
                         style={{ margin: "auto" }}
                       >
-                        {shelf.id}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevenir que el click active el arrastre
+                            openModal(shelf);
+                          }}
+                          className="bg-transparent text-white w-full h-full"
+                        >
+                          {shelf.id}
+                        </button>
+                      </label>
                     )}
                   </td>
                 );
