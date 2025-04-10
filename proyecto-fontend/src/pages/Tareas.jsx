@@ -21,6 +21,12 @@ export default function Tareas() {
   const [isModalOpenAsignar, setIsModalOpenAsignar] = useState(false);
   const navigate = useNavigate();
 
+  // Paginación
+  const [pagePorHacer, setPagePorHacer] = useState(0);
+  const [pageEnProceso, setPageEnProceso] = useState(0);
+  const [pageFinalizadas, setPageFinalizadas] = useState(0);
+  const itemsPerPage = 4;
+
   useEffect(() => {
     if (!data) return;
     if (Array.isArray(data)) {
@@ -68,6 +74,19 @@ export default function Tareas() {
       tarea.empleado_asignado === "Sin asignar"
   );
 
+  const paginatedPorHacer = tasksPorHacer.slice(
+    pagePorHacer * itemsPerPage,
+    (pagePorHacer + 1) * itemsPerPage
+  );
+  const paginatedEnProceso = tasksEnProceso.slice(
+    pageEnProceso * itemsPerPage,
+    (pageEnProceso + 1) * itemsPerPage
+  );
+  const paginatedFinalizadas = tasksFinalizadas.slice(
+    pageFinalizadas * itemsPerPage,
+    (pageFinalizadas + 1) * itemsPerPage
+  );
+
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
@@ -110,7 +129,7 @@ export default function Tareas() {
   };
 
   const handleTareaSeleccionada = (tarea) => {
-    setSelectedTask(tarea); // Guardamos la tarea seleccionada para editar
+    setSelectedTask(tarea);
   };
 
   const handleEmpleadoChange = (e) => {
@@ -122,8 +141,15 @@ export default function Tareas() {
 
   const handleSaveAsignacion = () => {
     console.log("Empleado asignado:", selectedTask);
-    setIsModalOpenAsignar(false); // Cerrar el modal después de guardar
-    setSelectedTask(null); // Limpiar la tarea seleccionada
+    setIsModalOpenAsignar(false);
+    setSelectedTask(null);
+  };
+
+  // Función para cambiar de página
+  const handlePageChange = (page, setPage, totalLength) => {
+    if (page >= 0 && page < Math.ceil(totalLength / itemsPerPage)) {
+      setPage(page);
+    }
   };
 
   return (
@@ -133,7 +159,7 @@ export default function Tareas() {
         acciones={{
           Añadir: handleModalOpen,
           "Asignar Usuario": handleModalOpenAsignar,
-          "Calendario": () => navigate("/calendario")
+          Calendario: () => navigate("/calendario"),
         }}
       />
 
@@ -142,6 +168,7 @@ export default function Tareas() {
           <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg w-1/3">
               <h3 className="text-2xl mb-4 text-center">Añadir Tarea</h3>
+              {/* Campos del formulario */}
               <div className="mb-4">
                 <label className="block text-sm font-medium">ID</label>
                 <input
@@ -311,49 +338,131 @@ export default function Tareas() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
-            ["Por Hacer", tasksPorHacer, "bg-red-50"],
-            ["En Proceso", tasksEnProceso, "bg-yellow-50"],
-            ["Finalizadas", tasksFinalizadas, "bg-green-50"],
-          ].map(([title, tasks, bgColor]) => (
-            <div key={title}>
-              <h2 className="text-2xl font-medium text-center mb-4">
-                Tareas {title}
-              </h2>
-              <div className="grid grid-cols-1 gap-6">
-                {tasks.map((tarea) => (
-                  <div
-                    key={tarea.id}
-                    className={`border border-gray-300 rounded-lg shadow-lg p-5 ${bgColor}`}
-                  >
-                    <div className="flex">
-                      <h3 className="text-lg font-semibold text-blue-600">
-                        {tarea.descripcion}
-                      </h3>
-                      <div className="ml-auto flex gap-2">
-                        <button>
-                          <img className="w-6 h-6" src="editar.png" />
-                        </button>
-                        <button>
-                          <img className="w-6 h-6" src="eliminar.png" />
-                        </button>
+            [
+              "Por Hacer",
+              paginatedPorHacer,
+              tasksPorHacer.length,
+              pagePorHacer,
+              setPagePorHacer,
+              "bg-red-50",
+            ],
+            [
+              "En Proceso",
+              paginatedEnProceso,
+              tasksEnProceso.length,
+              pageEnProceso,
+              setPageEnProceso,
+              "bg-yellow-50",
+            ],
+            [
+              "Finalizadas",
+              paginatedFinalizadas,
+              tasksFinalizadas.length,
+              pageFinalizadas,
+              setPageFinalizadas,
+              "bg-green-50",
+            ],
+          ].map(
+            ([
+              title,
+              paginatedTasks,
+              totalLength,
+              currentPage,
+              setPage,
+              bgColor,
+            ]) => (
+              <div key={title}>
+                <h2 className="text-2xl font-medium text-center mb-4">
+                  Tareas {title}
+                </h2>
+                <div className="grid grid-cols-1 gap-6">
+                  {paginatedTasks.map((tarea) => (
+                    <div
+                      key={tarea.id}
+                      className={`border border-gray-300 rounded-lg shadow-lg p-5 ${bgColor}`}
+                    >
+                      <div className="flex">
+                        <h3 className="text-lg font-semibold text-blue-600">
+                          {tarea.descripcion}
+                        </h3>
+                        <div className="ml-auto flex gap-2">
+                          <button>
+                            <img className="w-6 h-6" src="editar.png" />
+                          </button>
+                          <button>
+                            <img className="w-6 h-6" src="eliminar.png" />
+                          </button>
+                        </div>
                       </div>
+                      <p className={`text-sm ${getStatusColor(tarea.estado)}`}>
+                        <strong>Estado:</strong> {tarea.estado}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <strong>Empleado Asignado:</strong>{" "}
+                        {tarea.empleado_asignado}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <strong>Fecha de Asignación:</strong>{" "}
+                        {tarea.fecha_asignacion}
+                      </p>
                     </div>
-                    <p className={`text-sm ${getStatusColor(tarea.estado)}`}>
-                      <strong>Estado:</strong> {tarea.estado}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <strong>Empleado Asignado:</strong>{" "}
-                      {tarea.empleado_asignado}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <strong>Fecha de Asignación:</strong>{" "}
-                      {tarea.fecha_asignacion}
-                    </p>
+                  ))}
+                </div>
+
+                {totalLength > itemsPerPage && (
+                  <div className="flex justify-center mt-6 gap-4">
+                    <button
+                      onClick={() =>
+                        handlePageChange(currentPage - 1, setPage, totalLength)
+                      }
+                      disabled={currentPage === 0}
+                      className={`px-4 py-2 rounded-lg ${
+                        currentPage === 0
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : "bg-gray-500 text-white"
+                      }`}
+                    >
+                      Anterior
+                    </button>
+                    <div className="flex gap-2">
+                      {[...Array(Math.ceil(totalLength / itemsPerPage))].map(
+                        (_, index) => (
+                          <button
+                            key={index}
+                            onClick={() =>
+                              handlePageChange(index, setPage, totalLength)
+                            }
+                            className={`px-4 py-2 rounded-lg ${
+                              currentPage === index
+                                ? "bg-gray-700 text-white"
+                                : "bg-gray-300 text-gray-700"
+                            }`}
+                          >
+                            {index + 1}
+                          </button>
+                        )
+                      )}
+                    </div>
+                    <button
+                      onClick={() =>
+                        handlePageChange(currentPage + 1, setPage, totalLength)
+                      }
+                      disabled={
+                        currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
+                      }
+                      className={`px-4 py-2 rounded-lg ${
+                        currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : "bg-gray-500 text-white"
+                      }`}
+                    >
+                      Siguiente
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
       </div>
     </>

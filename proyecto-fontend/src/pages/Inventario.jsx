@@ -88,7 +88,7 @@ export default function Inventario() {
         <button
           onClick={() => setActual((prev) => Math.max(1, prev - 1))}
           disabled={actual === 1}
-          className="px-3 py-1 border rounded bg-gray-100 hover:bg-gray-200"
+          className="px-3 py-1 border rounded bg-gray-300 hover:bg-gray-400"
         >
           Anterior
         </button>
@@ -97,7 +97,7 @@ export default function Inventario() {
             key={i}
             onClick={() => setActual(i + 1)}
             className={`px-3 py-1 rounded border ${
-              actual === i + 1 ? "bg-red-500 text-white" : "bg-white"
+              actual === i + 1 ? "bg-gray-600 text-white" : "bg-white"
             }`}
           >
             {i + 1}
@@ -106,7 +106,7 @@ export default function Inventario() {
         <button
           onClick={() => setActual((prev) => Math.min(totalPaginas, prev + 1))}
           disabled={actual === totalPaginas}
-          className="px-3 py-1 border rounded bg-gray-100 hover:bg-gray-200"
+          className="px-3 py-1 border rounded bg-gray-300 hover:bg-gray-400"
         >
           Siguiente
         </button>
@@ -208,7 +208,7 @@ export default function Inventario() {
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-green-50 p-4 mb-4 flex flex-col items-center"
               >
                 <div className="flex w-full justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-blue-600">
+                  <h3 className="text-lg font-semibold text-gray-700">
                     {producto.nombre}
                   </h3>
                   <div className="flex gap-2">
@@ -262,7 +262,7 @@ export default function Inventario() {
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-red-50 p-4 mb-4 flex flex-col items-center"
               >
                 <div className="flex w-full justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-blue-600">
+                  <h3 className="text-lg font-semibold text-gray-700">
                     {producto.nombre}
                   </h3>
                   <div className="flex gap-2">
@@ -304,14 +304,105 @@ export default function Inventario() {
         </div>
       </div>
 
-      {/* Modal para añadir un producto */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-1/3">
             <h3 className="text-2xl mb-4 text-center">Añadir Producto</h3>
             <form encType="multipart/form-data" onSubmit={handleSaveProduct}>
-              {/* campos del modal (ID, nombre, cantidad, imagen, etc.) */}
-              {/* ... mismos que ya tenías sin cambios ... */}
+            <div className="mb-4">
+                <label className="block text-sm font-medium">ID</label>
+                <input
+                  type="text"
+                  name="id"
+                  value={newProduct.id}
+                  readOnly
+                  className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">Nombre</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={newProduct.nombre}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">Cantidad</label>
+                <input
+                  type="number"
+                  name="cantidad"
+                  value={newProduct.cantidad}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Imagen</label>
+
+                <div className="flex items-center space-x-4">
+                  <label
+                    htmlFor="fileUpload"
+                    className="bg-red-700 opacity-75 text-white px-4 py-2 rounded cursor-pointer hover:bg-red-900 transition"
+                  >
+                    Seleccionar archivo
+                  </label>
+
+                  <span className="text-sm text-gray-600">
+                    {selectedFileName || "Ningún archivo seleccionado"}
+                  </span>
+                </div>
+
+                <input
+                  id="fileUpload"
+                  type="file"
+                  name="url_img"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Estado</label>
+                <select
+                  name="estado"
+                  value={newProduct.estado}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                >
+                  <option value="activo">Activo</option>
+                  <option value="desactivado">Desactivado</option>
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">Código QR</label>
+                <input
+                  type="text"
+                  name="codigoQr"
+                  value={newProduct.codigoQr}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">
+                  Fecha de Creación
+                </label>
+                <input
+                  type="date"
+                  name="fecha_asignacion"
+                  value={newProduct.fecha_creacion}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
               <div className="flex justify-between">
                 <button
                   onClick={handleModalClose}
