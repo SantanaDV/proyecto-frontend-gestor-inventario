@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 
 export default function AlmacenVisual() {
-  const [gridSize, setGridSize] = useState("");
+  const [rows, setRows] = useState("");
+  const [cols, setCols] = useState("");
   const [warehouseSize, setWarehouseSize] = useState(null);
   const [shelves, setShelves] = useState([]);
   const [showError, setShowError] = useState(false);
@@ -12,38 +13,54 @@ export default function AlmacenVisual() {
     const savedSize = localStorage.getItem("warehouseSize");
     const savedShelves = JSON.parse(localStorage.getItem("shelves") || "[]");
 
+    console.log("Datos guardados en localStorage:");
+    console.log("warehouseSize:", savedSize);
+    console.log("shelves:", savedShelves);
+
     if (savedSize) {
       try {
         const parsedSize = JSON.parse(savedSize);
-        setWarehouseSize(parsedSize);
-        setGridSize(parsedSize.gridCount.toString());
+        if (parsedSize && parsedSize.rows && parsedSize.cols) {
+          setWarehouseSize(parsedSize); // Guardamos el tamaño del almacén
+          setRows(parsedSize.rows.toString()); // Establecemos el número de filas
+          setCols(parsedSize.cols.toString()); // Establecemos el número de columnas
+        }
       } catch (error) {
         console.error("Error al parsear warehouseSize", error);
       }
     }
 
-    setShelves(savedShelves);
-  }, []);
+    setShelves(savedShelves); // Establecemos las estanterías
+  }, []); // Este useEffect se ejecutará solo una vez al principio
 
   useEffect(() => {
+    console.log("Guardando warehouseSize:", warehouseSize);
     if (warehouseSize) {
       localStorage.setItem("warehouseSize", JSON.stringify(warehouseSize));
     }
-  }, [warehouseSize]);
+  }, [warehouseSize]); // Guardamos warehouseSize cuando cambia
 
   useEffect(() => {
-    localStorage.setItem("shelves", JSON.stringify(shelves));
-  }, [shelves]);
+    console.log("Guardando shelves:", shelves);
+    if (shelves.length > 0) {
+      localStorage.setItem("shelves", JSON.stringify(shelves));
+    }
+  }, [shelves]); // Guardamos shelves cuando cambia
 
   const handleGridSubmit = (e) => {
     e.preventDefault();
-    const n = parseInt(gridSize);
-    if (isNaN(n) || n <= 0) {
-      setShowError(true);
-      return;
+    const rowCount = parseInt(rows);
+    const colCount = parseInt(cols);
+
+    if (isNaN(rowCount) || rowCount <= 0 || isNaN(colCount) || colCount <= 0) {
+      if(rowCount <=30 && colCount <=30){
+        setShowError(true);
+        return;
+      }
+
     }
     setShowError(false);
-    setWarehouseSize({ gridCount: n });
+    setWarehouseSize({ rows: rowCount, cols: colCount });
   };
 
   const addShelf = (orientation = "horizontal") => {
@@ -53,12 +70,12 @@ export default function AlmacenVisual() {
     let newRow = 0;
     let newCol = 0;
 
-    for (let row = 0; row < warehouseSize.gridCount; row++) {
-      for (let col = 0; col < warehouseSize.gridCount; col++) {
+    for (let row = 0; row < warehouseSize.rows; row++) {
+      for (let col = 0; col < warehouseSize.cols; col++) {
         const fits =
           orientation === "horizontal"
-            ? col < warehouseSize.gridCount
-            : row < warehouseSize.gridCount;
+            ? col < warehouseSize.cols
+            : row < warehouseSize.rows;
 
         if (!fits) continue;
 
@@ -120,7 +137,8 @@ export default function AlmacenVisual() {
     localStorage.removeItem("shelves");
     setWarehouseSize(null);
     setShelves([]);
-    setGridSize("");
+    setRows("");
+    setCols("");
   };
 
   const openModal = (shelf) => {
@@ -150,8 +168,8 @@ export default function AlmacenVisual() {
     // Revisar si hay suficiente espacio para la estantería
     const fitsInBounds =
       orientation === "horizontal"
-        ? col < warehouseSize.gridCount // Horizontal ocupa solo una celda
-        : row < warehouseSize.gridCount; // Vertical ocupa solo una celda
+        ? col < warehouseSize.cols // Horizontal ocupa solo una celda
+        : row < warehouseSize.rows; // Vertical ocupa solo una celda
 
     if (!fitsInBounds) {
       console.log(`La estantería no cabe en los límites de la cuadrícula: ${orientation} en ${row}, ${col}`);
@@ -165,9 +183,9 @@ export default function AlmacenVisual() {
     }
 
     moveShelf(shelf.id, row, col);
-};
+  };
 
-const isConflict = (id, newRow, newCol, orientation) => {
+  const isConflict = (id, newRow, newCol, orientation) => {
     return shelves.some((other) => {
       if (other.id === id) return false;
 
@@ -200,20 +218,29 @@ const isConflict = (id, newRow, newCol, orientation) => {
 
       return conflictFound;
     });
-};
-
+  };
 
   const toggleGrid = () => setShowGrid(!showGrid);
 
-  if (!warehouseSize || !warehouseSize.gridCount) {
+  if (!warehouseSize || !warehouseSize.rows || !warehouseSize.cols) {
     return (
       <form onSubmit={handleGridSubmit} className="p-4">
         <label className="block mb-2">
-          Tamaño de la cuadrícula (NxN):
+          Número de Filas:
           <input
             type="number"
-            value={gridSize}
-            onChange={(e) => setGridSize(e.target.value)}
+            value={rows}
+            onChange={(e) => setRows(e.target.value)}
+            className="border mx-2 p-1"
+            required
+          />
+        </label>
+        <label className="block mb-2">
+          Número de Columnas:
+          <input
+            type="number"
+            value={cols}
+            onChange={(e) => setCols(e.target.value)}
             className="border mx-2 p-1"
             required
           />
@@ -223,7 +250,7 @@ const isConflict = (id, newRow, newCol, orientation) => {
         </button>
         {showError && (
           <p className="text-red-500 mt-2">
-            Por favor, ingresa un número válido.
+            Por favor, ingresa números válidos para filas y columnas.
           </p>
         )}
       </form>
@@ -287,9 +314,9 @@ const isConflict = (id, newRow, newCol, orientation) => {
 
       <table className="border-collapse w-full table-fixed">
         <tbody>
-          {[...Array(warehouseSize.gridCount)].map((_, row) => (
+          {[...Array(warehouseSize.rows)].map((_, row) => (
             <tr key={row}>
-              {[...Array(warehouseSize.gridCount)].map((_, col) => {
+              {[...Array(warehouseSize.cols)].map((_, col) => {
                 const shelf = shelves.find(
                   (s) => s.position.row === row && s.position.col === col
                 );
