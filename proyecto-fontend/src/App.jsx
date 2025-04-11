@@ -8,6 +8,7 @@ import Inventario from "./pages/Inventario";
 import Tareas from "./pages/Tareas";
 import Login from "./pages/Login";
 import CalendarioTareas from './pages/Calendar';
+import LogoutButton from './utilities/auth';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function AppContent() {
         <Route path="/inventario" element={<Inventario />} />
         <Route path="/tareas" element={<Tareas />} />
         <Route path="/calendario" element={<CalendarioTareas />} />
+        <Route path='/logout' element={<LogoutButton/>} />
       </Routes>
 
       {location.pathname !== '/' && <Footer />}
