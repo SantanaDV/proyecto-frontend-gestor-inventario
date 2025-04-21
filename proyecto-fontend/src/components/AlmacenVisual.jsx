@@ -71,7 +71,9 @@ export default function AlmacenVisual() {
     for (let row = 0; row < warehouseSize.rows; row++) {
       for (let col = 0; col < warehouseSize.cols; col++) {
         const fits =
-          orientation === "horizontal" ? col < warehouseSize.cols : row < warehouseSize.rows;
+          orientation === "horizontal"
+            ? col < warehouseSize.cols
+            : row < warehouseSize.rows;
         if (!fits) continue;
 
         const conflict = shelves.some((s) => {
@@ -241,7 +243,7 @@ export default function AlmacenVisual() {
         />
       )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto bg-gray-50">
         <table className="border-collapse w-full min-w-max table-fixed">
           <tbody>
             {[...Array(warehouseSize.rows)].map((_, row) => (
@@ -258,8 +260,8 @@ export default function AlmacenVisual() {
                     <td
                       key={`${row}-${col}`}
                       className={`w-24 h-24 text-center align-middle ${
-                        showGrid ? "border bg-white" : "border-0 bg-white"
-                      }`}
+                        showGrid ? "border" : "border-0"
+                      } bg-gray-50`}
                       onDragOver={onDragOver}
                       onDrop={(e) => onDrop(e, row, col)}
                     >
