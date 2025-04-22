@@ -12,6 +12,15 @@ export default function Tareas() {
     setUri: setUriCategorias,
     setError: setErrorCategorias,
   } = useApi("api/categoria", {});
+
+  const {
+    data: empleadosData,
+    loading: loadingEmpleados,
+    error: errorEmpleados,
+    setUri: setUriEmpleados,
+    setError: setErrorEmpleados,
+  } = useApi("api/empleado", {});
+
   const [categorias, setCategorias] = useState([]);
   const [parsedData, setParsedData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,7 +47,7 @@ export default function Tareas() {
 
   useEffect(() => {
     if (!localStorage.getItem("authToken")) {
-      navigate('/');
+      navigate("/");
     }
   }, [navigate]);
 
@@ -49,6 +58,14 @@ export default function Tareas() {
       setErrorCategorias("Los datos de categoría no son válidos");
     }
   }, [categoriasData, setErrorCategorias]);
+
+  useEffect(() => {
+    if (Array.isArray(empleadosData)) {
+      setEmpleadosDisponibles(empleadosData);
+    } else if (empleadosData) {
+      setErrorEmpleados("Los datos de empleados no son válidos");
+    }
+  }, [empleadosData, setErrorEmpleados]);
 
   useEffect(() => {
     if (!data) return;
@@ -217,14 +234,19 @@ export default function Tareas() {
                 <label className="block text-sm font-medium">
                   Empleado Asignado
                 </label>
-                <input
-                  type="text"
+                <select
                   name="empleado_asignado"
                   value={newTask.empleado_asignado}
                   onChange={handleInputChange}
                   className="border p-2 rounded w-full"
-                  required
-                />
+                >
+                  <option value="">Sin asignar</option>
+                  {empleadosDisponibles.map((empleado) => (
+                    <option key={empleado.id} value={empleado.nombre}>
+                      {empleado.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium">Estado</label>
@@ -326,8 +348,8 @@ export default function Tareas() {
                     >
                       <option value="">Seleccionar Empleado</option>
                       {empleadosDisponibles.map((e) => (
-                        <option key={e.id} value={e.empleado_asignado}>
-                          {e.empleado_asignado}
+                        <option key={e.id} value={e.nombre}>
+                          {e.nombre}
                         </option>
                       ))}
                     </select>
@@ -443,10 +465,11 @@ export default function Tareas() {
                         handlePageChange(currentPage - 1, setPage, totalLength)
                       }
                       disabled={currentPage === 0}
-                      className={`px-4 py-2 rounded-lg ${currentPage === 0
+                      className={`px-4 py-2 rounded-lg ${
+                        currentPage === 0
                           ? "bg-gray-300 cursor-not-allowed"
                           : "bg-gray-500 text-white"
-                        }`}
+                      }`}
                     >
                       Anterior
                     </button>
@@ -458,10 +481,11 @@ export default function Tareas() {
                             onClick={() =>
                               handlePageChange(index, setPage, totalLength)
                             }
-                            className={`px-4 py-2 rounded-lg ${currentPage === index
+                            className={`px-4 py-2 rounded-lg ${
+                              currentPage === index
                                 ? "bg-gray-700 text-white"
                                 : "bg-gray-300 text-gray-700"
-                              }`}
+                            }`}
                           >
                             {index + 1}
                           </button>
@@ -475,10 +499,11 @@ export default function Tareas() {
                       disabled={
                         currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
                       }
-                      className={`px-4 py-2 rounded-lg ${currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
+                      className={`px-4 py-2 rounded-lg ${
+                        currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
                           ? "bg-gray-300 cursor-not-allowed"
                           : "bg-gray-500 text-white"
-                        }`}
+                      }`}
                     >
                       Siguiente
                     </button>
