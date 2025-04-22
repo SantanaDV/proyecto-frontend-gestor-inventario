@@ -179,7 +179,7 @@ export default function Inventario() {
   const handleDeleteProduct = (id_producto) => {
     const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
     if (confirmDelete) {
-      // Aquí deberías llamar a tu API para eliminar el producto
+      // Aqui eliminamos
     }
   };
 
