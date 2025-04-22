@@ -11,7 +11,7 @@ export default function Tareas() {
     error: errorCategorias,
     setUri: setUriCategorias,
     setError: setErrorCategorias,
-  } = useApi("api/categoria", {});
+  } = useApi("api/categoriatarea", {});
 
   const {
     data: empleadosData,
