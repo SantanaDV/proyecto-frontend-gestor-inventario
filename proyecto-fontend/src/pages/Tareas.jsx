@@ -5,6 +5,14 @@ import { useNavigate } from "react-router-dom";
 
 export default function Tareas() {
   const { data, loading, error, setUri, setError } = useApi("api/tarea", {});
+  const {
+    data: categoriasData,
+    loading: loadingCategorias,
+    error: errorCategorias,
+    setUri: setUriCategorias,
+    setError: setErrorCategorias,
+  } = useApi("api/categoria", {});
+  const [categorias, setCategorias] = useState([]);
   const [parsedData, setParsedData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -18,6 +26,7 @@ export default function Tareas() {
   const [filters, setFilters] = useState({ empleado: "", fecha: "" });
   const [selectedTask, setSelectedTask] = useState(null);
   const [empleadosDisponibles, setEmpleadosDisponibles] = useState([]);
+  const [categoriasDisponibles, setCategoriasDisponibles] = useState([]);
   const [isModalOpenAsignar, setIsModalOpenAsignar] = useState(false);
   const navigate = useNavigate();
 
@@ -33,6 +42,13 @@ export default function Tareas() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    if (Array.isArray(categoriasData)) {
+      setCategorias(categoriasData);
+    } else if (categoriasData) {
+      setErrorCategorias("Los datos de categoría no son válidos");
+    }
+  }, [categoriasData, setErrorCategorias]);
 
   useEffect(() => {
     if (!data) return;
@@ -237,17 +253,21 @@ export default function Tareas() {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium">
-                  ID Categoría
-                </label>
-                <input
-                  type="text"
+                <label className="block text-sm font-medium">Categoría</label>
+                <select
                   name="id_categoria"
                   value={newTask.id_categoria}
                   onChange={handleInputChange}
                   className="border p-2 rounded w-full"
                   required
-                />
+                >
+                  <option value="">Selecciona una categoría</option>
+                  {categorias.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.descripcion}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex justify-between">
                 <button
@@ -423,11 +443,10 @@ export default function Tareas() {
                         handlePageChange(currentPage - 1, setPage, totalLength)
                       }
                       disabled={currentPage === 0}
-                      className={`px-4 py-2 rounded-lg ${
-                        currentPage === 0
+                      className={`px-4 py-2 rounded-lg ${currentPage === 0
                           ? "bg-gray-300 cursor-not-allowed"
                           : "bg-gray-500 text-white"
-                      }`}
+                        }`}
                     >
                       Anterior
                     </button>
@@ -439,11 +458,10 @@ export default function Tareas() {
                             onClick={() =>
                               handlePageChange(index, setPage, totalLength)
                             }
-                            className={`px-4 py-2 rounded-lg ${
-                              currentPage === index
+                            className={`px-4 py-2 rounded-lg ${currentPage === index
                                 ? "bg-gray-700 text-white"
                                 : "bg-gray-300 text-gray-700"
-                            }`}
+                              }`}
                           >
                             {index + 1}
                           </button>
@@ -457,11 +475,10 @@ export default function Tareas() {
                       disabled={
                         currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
                       }
-                      className={`px-4 py-2 rounded-lg ${
-                        currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
+                      className={`px-4 py-2 rounded-lg ${currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
                           ? "bg-gray-300 cursor-not-allowed"
                           : "bg-gray-500 text-white"
-                      }`}
+                        }`}
                     >
                       Siguiente
                     </button>
