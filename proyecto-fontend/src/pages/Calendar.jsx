@@ -8,6 +8,14 @@ import HeaderFuncional from "../components/HeaderFuncional";
 export default function CalendarioTareas() {
   const navigate = useNavigate();
   const { data, loading, error, setUri, setError } = useApi("/tarea", {});
+  const {
+    data: categoriasData,
+    loading: loadingCategorias,
+    error: errorCategorias,
+    setUri: setUriCategorias,
+    setError: setErrorCategorias,
+  } = useApi("api/categoria", {});
+  const [categorias, setCategorias] = useState([]);
   const [parsedData, setParsedData] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,6 +33,14 @@ export default function CalendarioTareas() {
       navigate('/');
     }
   }, [navigate]);
+
+  useEffect(() => {
+    if (Array.isArray(categoriasData)) {
+      setCategorias(categoriasData);
+    } else if (categoriasData) {
+      setErrorCategorias("Los datos de categoría no son válidos");
+    }
+  }, [categoriasData, setErrorCategorias]);
 
   useEffect(() => {
     if (!data) return;
@@ -211,22 +227,28 @@ export default function CalendarioTareas() {
               <input
                 type="date"
                 name="fecha_asignacion"
-                value={selectedDate.toLocaleDateString("en-CA")} 
+                value={selectedDate.toLocaleDateString("en-CA")}
                 readOnly
                 className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
               />
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium">ID Categoría</label>
-              <input
-                type="text"
-                name="id_categoria"
-                value={newTask.id_categoria}
-                onChange={handleInputChange}
-                className="border p-2 rounded w-full"
-                required
-              />
-            </div>
+                <label className="block text-sm font-medium">Categoría</label>
+                <select
+                  name="id_categoria"
+                  value={newTask.id_categoria}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                >
+                  <option value="">Selecciona una categoría</option>
+                  {categorias.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.descripcion}
+                    </option>
+                  ))}
+                </select>
+              </div>
             <div className="flex justify-between">
               <button
                 onClick={handleModalClose}
