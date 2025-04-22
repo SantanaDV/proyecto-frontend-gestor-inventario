@@ -136,7 +136,7 @@ export default function Inventario() {
       codigoQr: "",
       estado: "activo",
       url_img: "",
-      fecha_creacion: new Date().toISOString().split("T")[0],
+      fecha_creacion: new Date().toISOString().split("T")[0], // Fecha solo, sin hora
     });
 
     setIsEditing(false);
@@ -170,7 +170,14 @@ export default function Inventario() {
   };
 
   const handleEditProduct = (producto) => {
-    setNewProduct({ ...producto });
+    // Formatear la fecha para que no tenga la parte de la hora
+    const fechaSinHora = producto.fecha_creacion.split("T")[0];  // Esto deja solo la fecha
+
+    setNewProduct({
+      ...producto,
+      fecha_creacion: fechaSinHora, // Aseguramos que solo tiene la fecha
+    });
+
     setIsEditing(true);
     setSelectedFileName(producto.url_img?.name || "");
     setIsModalOpen(true);
@@ -179,7 +186,7 @@ export default function Inventario() {
   const handleDeleteProduct = (id_producto) => {
     const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
     if (confirmDelete) {
-      // Aqui eliminamos
+      // Aquí eliminamos el producto
     }
   };
 
@@ -349,7 +356,24 @@ export default function Inventario() {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Estado</label>
+                <label className="block text-sm font-medium">Categoría</label>
+                <select
+                  name="categoria"
+                  value={newProduct.categoria}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                >
+                  <option value="">Selecciona una categoría</option>
+                  {categorias.map((cat, idx) => (
+                    <option key={idx} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">Estado</label>
                 <select
                   name="estado"
                   value={newProduct.estado}
@@ -362,17 +386,6 @@ export default function Inventario() {
                 </select>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium">Código QR</label>
-                <input
-                  type="text"
-                  name="codigoQr"
-                  value={newProduct.codigoQr}
-                  onChange={handleInputChange}
-                  className="border p-2 rounded w-full"
-                  required
-                />
-              </div>
-              <div className="mb-4">
                 <label className="block text-sm font-medium">Fecha de Creación</label>
                 <input
                   type="date"
@@ -380,22 +393,21 @@ export default function Inventario() {
                   value={newProduct.fecha_creacion}
                   onChange={handleInputChange}
                   className="border p-2 rounded w-full"
-                  required
                 />
               </div>
               <div className="flex justify-between">
                 <button
-                  onClick={handleModalClose}
                   type="button"
-                  className="bg-red-300 text-black px-4 py-2 rounded"
+                  onClick={handleModalClose}
+                  className="text-white bg-red-500 hover:bg-red-700 px-4 py-2 rounded"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-red-500 text-white px-4 py-2 rounded"
+                  className="text-white bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded"
                 >
-                  Guardar
+                  {isEditing ? "Actualizar" : "Guardar"}
                 </button>
               </div>
             </form>
