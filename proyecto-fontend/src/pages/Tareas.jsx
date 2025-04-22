@@ -112,7 +112,10 @@ export default function Tareas() {
   };
 
   const handleEdit = (tarea) => {
-    setNewTask({ ...tarea });
+    setNewTask({
+      ...tarea,
+      fecha_asignacion: tarea.fecha_asignacion.split('T')[0],
+    });
     setIsEditing(true);
     setIsModalOpen(true);
   };
@@ -149,9 +152,6 @@ export default function Tareas() {
   };
 
   return (
-
-
-
     <>
        <HeaderFuncional
         botones={["Añadir", "Asignar Usuario", "Calendario"]}
