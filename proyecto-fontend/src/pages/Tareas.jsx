@@ -151,6 +151,12 @@ export default function Tareas() {
     }
   };
 
+  const handleDelete = (id_producto) => {
+    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
+    if (confirmDelete) {
+      // Aquí eliminamos
+    }
+  };
   return (
     <>
        <HeaderFuncional
