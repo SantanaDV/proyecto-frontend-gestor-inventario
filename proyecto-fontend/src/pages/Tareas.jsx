@@ -12,6 +12,15 @@ export default function Tareas() {
     setUri: setUriCategorias,
     setError: setErrorCategorias,
   } = useApi("api/categoria", {});
+
+  const {
+    data: empleadosData,
+    loading: loadingEmpleados,
+    error: errorEmpleados,
+    setUri: setUriEmpleados,
+    setError: setErrorEmpleados,
+  } = useApi("api/empleado", {});
+
   const [categorias, setCategorias] = useState([]);
   const [parsedData, setParsedData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,7 +36,6 @@ export default function Tareas() {
   const [filters, setFilters] = useState({ empleado: "", fecha: "" });
   const [selectedTask, setSelectedTask] = useState(null);
   const [empleadosDisponibles, setEmpleadosDisponibles] = useState([]);
-  const [categoriasDisponibles, setCategoriasDisponibles] = useState([]);
   const [isModalOpenAsignar, setIsModalOpenAsignar] = useState(false);
   const navigate = useNavigate();
 
@@ -37,26 +45,23 @@ export default function Tareas() {
   const itemsPerPage = 4;
 
   useEffect(() => {
-    if (!localStorage.getItem("authToken")) {
-      navigate('/');
-    }
+    if (!localStorage.getItem("authToken")) navigate("/");
   }, [navigate]);
 
   useEffect(() => {
-    if (Array.isArray(categoriasData)) {
-      setCategorias(categoriasData);
-    } else if (categoriasData) {
-      setErrorCategorias("Los datos de categoría no son válidos");
-    }
+    if (Array.isArray(categoriasData)) setCategorias(categoriasData);
+    else if (categoriasData) setErrorCategorias("Los datos de categoría no son válidos");
   }, [categoriasData, setErrorCategorias]);
 
   useEffect(() => {
+    if (Array.isArray(empleadosData)) setEmpleadosDisponibles(empleadosData);
+    else if (empleadosData) setErrorEmpleados("Los datos de empleados no son válidos");
+  }, [empleadosData, setErrorEmpleados]);
+
+  useEffect(() => {
     if (!data) return;
-    if (Array.isArray(data)) {
-      setParsedData(data);
-    } else {
-      setError("Los datos no son válidos");
-    }
+    if (Array.isArray(data)) setParsedData(data);
+    else setError("Los datos no son válidos");
   }, [data, setError]);
 
   const getStatusColor = (estado) => {
@@ -68,17 +73,15 @@ export default function Tareas() {
     }
   };
 
-  const filteredTasks = parsedData.filter((tarea) => {
-    return (
-      (filters.empleado === "" || tarea.empleado_asignado.toLowerCase().includes(filters.empleado.toLowerCase())) &&
-      (filters.fecha === "" || tarea.fecha_asignacion === filters.fecha)
-    );
-  });
+  const filteredTasks = parsedData.filter(tarea => (
+    (filters.empleado === "" || tarea.empleado_asignado.toLowerCase().includes(filters.empleado.toLowerCase())) &&
+    (filters.fecha === "" || tarea.fecha_asignacion === filters.fecha)
+  ));
 
-  const tasksPorHacer = filteredTasks.filter((t) => t.estado === "Por hacer");
-  const tasksEnProceso = filteredTasks.filter((t) => t.estado === "En Proceso");
-  const tasksFinalizadas = filteredTasks.filter((t) => t.estado === "Finalizada");
-  const tasksSinAsignar = parsedData.filter((t) => t.empleado_asignado === "" || t.empleado_asignado === "Sin asignar");
+  const tasksPorHacer = filteredTasks.filter(t => t.estado === "Por hacer");
+  const tasksEnProceso = filteredTasks.filter(t => t.estado === "En Proceso");
+  const tasksFinalizadas = filteredTasks.filter(t => t.estado === "Finalizada");
+  const tasksSinAsignar = parsedData.filter(t => !t.empleado_asignado || t.empleado_asignado === "Sin asignar");
 
   const paginatedPorHacer = tasksPorHacer.slice(pagePorHacer * itemsPerPage, (pagePorHacer + 1) * itemsPerPage);
   const paginatedEnProceso = tasksEnProceso.slice(pageEnProceso * itemsPerPage, (pageEnProceso + 1) * itemsPerPage);
@@ -95,7 +98,7 @@ export default function Tareas() {
   };
 
   const handleModalOpen = () => {
-    const newId = parsedData.length ? Math.max(...parsedData.map((t) => t.id)) + 1 : 1;
+    const newId = parsedData.length ? Math.max(...parsedData.map(t => t.id)) + 1 : 1;
     setNewTask({
       id: newId,
       descripcion: "",
@@ -104,19 +107,14 @@ export default function Tareas() {
       fecha_asignacion: new Date().toISOString().split("T")[0],
       id_categoria: "",
     });
-    setIsModalOpen(true);
     setIsEditing(false);
+    setIsModalOpen(true);
   };
 
   const handleEdit = (tarea) => {
     setNewTask({ ...tarea });
     setIsEditing(true);
     setIsModalOpen(true);
-  };
-
-  const handleDelete = (tarea) => {
-    const categoria = categorias.find(cat => cat.id === tarea.id_categoria);
-    alert(`Estás a punto de eliminar la tarea "${tarea.descripcion}" que pertenece a la categoría: ${categoria?.descripcion || "No asignada"}`);
   };
 
   const handleInputChange = (e) => {
@@ -130,13 +128,9 @@ export default function Tareas() {
     setIsEditing(false);
   };
 
-  const handleModalOpenAsignar = () => {
-    setIsModalOpenAsignar(true);
-  };
+  const handleModalOpenAsignar = () => setIsModalOpenAsignar(true);
 
-  const handleTareaSeleccionada = (tarea) => {
-    setSelectedTask(tarea);
-  };
+  const handleTareaSeleccionada = (tarea) => setSelectedTask(tarea);
 
   const handleEmpleadoChange = (e) => {
     setSelectedTask({ ...selectedTask, empleado_asignado: e.target.value });
