@@ -159,7 +159,7 @@ export default function Tareas() {
   };
   return (
     <>
-       <HeaderFuncional
+      <HeaderFuncional
         botones={["Añadir", "Asignar Usuario", "Calendario"]}
         acciones={{
           Añadir: handleModalOpen,
@@ -172,7 +172,7 @@ export default function Tareas() {
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg w-1/3">
-              <h3 className="text-2xl mb-4 text-center">Añadir Tarea</h3>
+              <h3 className="text-2xl mb-4 text-center">{isEditing ? "Editar Tarea" : "Añadir Tarea"}</h3>
               {/* Campos del formulario */}
               <div className="mb-4">
                 <label className="block text-sm font-medium">ID</label>
@@ -411,61 +411,31 @@ export default function Tareas() {
                         {tarea.empleado_asignado}
                       </p>
                       <p className="text-sm text-gray-600">
+                        <strong>Categoría:</strong> {tarea.id_categoria}
+                      </p>
+                      <p className="text-sm text-gray-600">
                         <strong>Fecha de Asignación:</strong>{" "}
                         {tarea.fecha_asignacion}
                       </p>
                     </div>
                   ))}
                 </div>
-
-                {totalLength > itemsPerPage && (
-                  <div className="flex justify-center mt-6 gap-4">
-                    <button
-                      onClick={() =>
-                        handlePageChange(currentPage - 1, setPage, totalLength)
-                      }
-                      disabled={currentPage === 0}
-                      className={`px-4 py-2 rounded-lg ${currentPage === 0
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-gray-500 text-white"
-                        }`}
-                    >
-                      Anterior
-                    </button>
-                    <div className="flex gap-2">
-                      {[...Array(Math.ceil(totalLength / itemsPerPage))].map(
-                        (_, index) => (
-                          <button
-                            key={index}
-                            onClick={() =>
-                              handlePageChange(index, setPage, totalLength)
-                            }
-                            className={`px-4 py-2 rounded-lg ${currentPage === index
-                              ? "bg-gray-700 text-white"
-                              : "bg-gray-300 text-gray-700"
-                              }`}
-                          >
-                            {index + 1}
-                          </button>
-                        )
-                      )}
-                    </div>
-                    <button
-                      onClick={() =>
-                        handlePageChange(currentPage + 1, setPage, totalLength)
-                      }
-                      disabled={
-                        currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
-                      }
-                      className={`px-4 py-2 rounded-lg ${currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-gray-500 text-white"
-                        }`}
-                    >
-                      Siguiente
-                    </button>
-                  </div>
-                )}
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1, setPage, totalLength)}
+                    disabled={currentPage <= 0}
+                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1, setPage, totalLength)}
+                    disabled={currentPage >= Math.ceil(totalLength / itemsPerPage) - 1}
+                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                  >
+                    Siguiente
+                  </button>
+                </div>
               </div>
             )
           )}
