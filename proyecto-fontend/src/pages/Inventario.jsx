@@ -243,7 +243,7 @@ export default function Inventario() {
                   </div>
                 </div>
                 <img
-                  src={producto.url_img}
+                  src={"http://localhost:8080/imagen/"+producto.url_img}
                   alt={producto.nombre}
                   onClick={() => handleEditProduct(producto)}
                   className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
@@ -279,7 +279,7 @@ export default function Inventario() {
                   </div>
                 </div>
                 <img
-                  src={producto.url_img}
+                 src={"http://localhost:8080/imagen/"+producto.url_img}
                   alt={producto.nombre}
                   onClick={() => handleEditProduct(producto)}
                   className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
