@@ -4,7 +4,6 @@ import HeaderFuncional from "../components/HeaderFuncional";
 import { useNavigate } from "react-router-dom";
 
 const cargarDatos = (data, setParsedData, setCategorias, setError) => {
-  
   if (!data) return;
 
   if (Array.isArray(data)) {
@@ -34,6 +33,7 @@ export default function Inventario() {
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [cantidadFiltro, setCantidadFiltro] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [newProduct, setNewProduct] = useState({
     id_producto: "",
@@ -46,7 +46,6 @@ export default function Inventario() {
     fecha_creacion: new Date().toISOString().split("T")[0],
   });
 
-  // Paginación
   const [paginaActiva, setPaginaActiva] = useState(1);
   const [paginaDesactivada, setPaginaDesactivada] = useState(1);
   const productosPorPagina = 3;
@@ -56,7 +55,6 @@ export default function Inventario() {
       navigate('/');
     }
   }, [navigate]);
-
 
   useEffect(() => {
     cargarDatos(data, setParsedData, setCategorias, setError);
@@ -71,12 +69,8 @@ export default function Inventario() {
     );
   });
 
-  const productosActivos = productosFiltrados.filter(
-    (p) => p.estado === "activo"
-  );
-  const productosDesactivados = productosFiltrados.filter(
-    (p) => p.estado === "desactivado"
-  );
+  const productosActivos = productosFiltrados.filter((p) => p.estado === "activo");
+  const productosDesactivados = productosFiltrados.filter((p) => p.estado === "desactivado");
 
   const indiceInicioActivos = (paginaActiva - 1) * productosPorPagina;
   const productosActivosPaginados = productosActivos.slice(
@@ -131,12 +125,11 @@ export default function Inventario() {
     const sortedData = [...parsedData].sort(
       (a, b) => Number(a.id_producto) - Number(b.id_producto)
     );
-
     const lastItem = sortedData[sortedData.length - 1];
     const newId = lastItem ? Number(lastItem.id_producto) + 1 : 1;
 
     setNewProduct({
-      id: newId,
+      id_producto: newId,
       nombre: "",
       cantidad: 0,
       categoria: "",
@@ -146,6 +139,8 @@ export default function Inventario() {
       fecha_creacion: new Date().toISOString().split("T")[0],
     });
 
+    setIsEditing(false);
+    setSelectedFileName("");
     setIsModalOpen(true);
   };
 
@@ -170,9 +165,22 @@ export default function Inventario() {
 
   const handleSaveProduct = (e) => {
     e.preventDefault();
-    console.log("Guardando nuevo producto:", newProduct);
-    // useApi.post("/producto", newProduct);
+    console.log(isEditing ? "Editando producto:" : "Guardando producto:", newProduct);
     setIsModalOpen(false);
+  };
+
+  const handleEditProduct = (producto) => {
+    setNewProduct({ ...producto });
+    setIsEditing(true);
+    setSelectedFileName(producto.url_img?.name || "");
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteProduct = (id_producto) => {
+    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
+    if (confirmDelete) {
+      // Aquí deberías llamar a tu API para eliminar el producto
+    }
   };
 
   return (
@@ -207,9 +215,7 @@ export default function Inventario() {
 
       <div className="grid grid-cols-2 gap-5 mt-5 p-8">
         <div>
-          <h2 className="text-2xl font-medium text-center mb-4">
-            Productos Activos
-          </h2>
+          <h2 className="text-2xl font-medium text-center mb-4">Productos Activos</h2>
           {productosActivosPaginados.length === 0 ? (
             <p>No hay productos activos.</p>
           ) : (
@@ -219,51 +225,33 @@ export default function Inventario() {
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-green-50 p-4 mb-4 flex flex-col items-center"
               >
                 <div className="flex w-full justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-700">
-                    {producto.nombre}
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-700">{producto.nombre}</h3>
                   <div className="flex gap-2">
-                    <button>
+                    <button onClick={() => handleEditProduct(producto)}>
                       <img className="w-6 h-6" src="editar.png" alt="Editar" />
                     </button>
-                    <button>
-                      <img
-                        className="w-6 h-6"
-                        src="eliminar.png"
-                        alt="Eliminar"
-                      />
+                    <button onClick={() => handleDeleteProduct(producto.id_producto)}>
+                      <img className="w-6 h-6" src="eliminar.png" alt="Eliminar" />
                     </button>
                   </div>
                 </div>
                 <img
                   src={producto.url_img}
                   alt={producto.nombre}
-                  className="w-24 h-24 object-cover rounded-md mb-4 mx-auto"
+                  onClick={() => handleEditProduct(producto)}
+                  className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
                 />
-                <p>
-                  <strong>Cantidad:</strong> {producto.cantidad}
-                </p>
-                <p>
-                  <strong>Categoría:</strong>{" "}
-                  {producto.categoria?.descripcion || "Sin categoría"}
-                </p>
-                <p>
-                  <strong>QR:</strong> {producto.codigoQr}
-                </p>
+                <p><strong>Cantidad:</strong> {producto.cantidad}</p>
+                <p><strong>Categoría:</strong> {producto.categoria?.descripcion || "Sin categoría"}</p>
+                <p><strong>QR:</strong> {producto.codigoQr}</p>
               </div>
             ))
           )}
-          <Paginacion
-            total={productosActivos.length}
-            actual={paginaActiva}
-            setActual={setPaginaActiva}
-          />
+          <Paginacion total={productosActivos.length} actual={paginaActiva} setActual={setPaginaActiva} />
         </div>
 
         <div>
-          <h2 className="text-2xl font-medium text-center mb-4">
-            Productos Desactivados
-          </h2>
+          <h2 className="text-2xl font-medium text-center mb-4">Productos Desactivados</h2>
           {productosDesactivadosPaginados.length === 0 ? (
             <p>No hay productos desactivados.</p>
           ) : (
@@ -273,59 +261,45 @@ export default function Inventario() {
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-red-50 p-4 mb-4 flex flex-col items-center"
               >
                 <div className="flex w-full justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-700">
-                    {producto.nombre}
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-700">{producto.nombre}</h3>
                   <div className="flex gap-2">
-                    <button>
+                    <button onClick={() => handleEditProduct(producto)}>
                       <img className="w-6 h-6" src="editar.png" alt="Editar" />
                     </button>
-                    <button>
-                      <img
-                        className="w-6 h-6"
-                        src="eliminar.png"
-                        alt="Eliminar"
-                      />
+                    <button onClick={() => handleDeleteProduct(producto.id_producto)}>
+                      <img className="w-6 h-6" src="eliminar.png" alt="Eliminar" />
                     </button>
                   </div>
                 </div>
                 <img
                   src={producto.url_img}
                   alt={producto.nombre}
-                  className="w-24 h-24 object-cover rounded-md mb-4 mx-auto"
+                  onClick={() => handleEditProduct(producto)}
+                  className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
                 />
-                <p>
-                  <strong>Cantidad:</strong> {producto.cantidad}
-                </p>
-                <p>
-                  <strong>Categoría:</strong>{" "}
-                  {producto.categoria?.descripcion || "Sin categoría"}
-                </p>
-                <p>
-                  <strong>QR:</strong> {producto.codigoQr}
-                </p>
+                <p><strong>Cantidad:</strong> {producto.cantidad}</p>
+                <p><strong>Categoría:</strong> {producto.categoria?.descripcion || "Sin categoría"}</p>
+                <p><strong>QR:</strong> {producto.codigoQr}</p>
               </div>
             ))
           )}
-          <Paginacion
-            total={productosDesactivados.length}
-            actual={paginaDesactivada}
-            setActual={setPaginaDesactivada}
-          />
+          <Paginacion total={productosDesactivados.length} actual={paginaDesactivada} setActual={setPaginaDesactivada} />
         </div>
       </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-1/3">
-            <h3 className="text-2xl mb-4 text-center">Añadir Producto</h3>
+            <h3 className="text-2xl mb-4 text-center">
+              {isEditing ? "Editar Producto" : "Añadir Producto"}
+            </h3>
             <form encType="multipart/form-data" onSubmit={handleSaveProduct}>
-            <div className="mb-4">
+              <div className="mb-4">
                 <label className="block text-sm font-medium">ID</label>
                 <input
                   type="text"
                   name="id"
-                  value={newProduct.id}
+                  value={newProduct.id_producto}
                   readOnly
                   className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
                 />
@@ -354,7 +328,6 @@ export default function Inventario() {
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Imagen</label>
-
                 <div className="flex items-center space-x-4">
                   <label
                     htmlFor="fileUpload"
@@ -362,19 +335,17 @@ export default function Inventario() {
                   >
                     Seleccionar archivo
                   </label>
-
                   <span className="text-sm text-gray-600">
                     {selectedFileName || "Ningún archivo seleccionado"}
                   </span>
                 </div>
-
                 <input
                   id="fileUpload"
                   type="file"
                   name="url_img"
                   onChange={handleFileChange}
                   className="hidden"
-                  required
+                  required={!isEditing}
                 />
               </div>
               <div className="mb-4">
@@ -402,12 +373,10 @@ export default function Inventario() {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium">
-                  Fecha de Creación
-                </label>
+                <label className="block text-sm font-medium">Fecha de Creación</label>
                 <input
                   type="date"
-                  name="fecha_asignacion"
+                  name="fecha_creacion"
                   value={newProduct.fecha_creacion}
                   onChange={handleInputChange}
                   className="border p-2 rounded w-full"
@@ -417,6 +386,7 @@ export default function Inventario() {
               <div className="flex justify-between">
                 <button
                   onClick={handleModalClose}
+                  type="button"
                   className="bg-red-300 text-black px-4 py-2 rounded"
                 >
                   Cancelar
