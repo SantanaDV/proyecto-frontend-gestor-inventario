@@ -115,7 +115,6 @@ export default function Tareas() {
     setNewTask({
       ...tarea,
       fecha_asignacion: tarea.fecha_asignacion.split('T')[0],
-      id_categoria: tarea.id_categoria ?? tarea.categoria?.id ?? ""
     });
     setIsEditing(true);
     setIsModalOpen(true);
@@ -152,8 +151,12 @@ export default function Tareas() {
     }
   };
 
-  
-
+  const handleDelete = (id_producto) => {
+    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
+    if (confirmDelete) {
+      // Aquí eliminamos
+    }
+  };
   return (
     <>
       <HeaderFuncional
