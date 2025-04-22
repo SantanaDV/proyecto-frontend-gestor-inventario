@@ -15,6 +15,7 @@ export default function Tareas() {
   const [categorias, setCategorias] = useState([]);
   const [parsedData, setParsedData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [newTask, setNewTask] = useState({
     id: "",
     descripcion: "",
@@ -30,7 +31,6 @@ export default function Tareas() {
   const [isModalOpenAsignar, setIsModalOpenAsignar] = useState(false);
   const navigate = useNavigate();
 
-  // Paginación
   const [pagePorHacer, setPagePorHacer] = useState(0);
   const [pageEnProceso, setPageEnProceso] = useState(0);
   const [pageFinalizadas, setPageFinalizadas] = useState(0);
@@ -61,54 +61,28 @@ export default function Tareas() {
 
   const getStatusColor = (estado) => {
     switch (estado) {
-      case "Por hacer":
-        return "text-red-500";
-      case "En Proceso":
-        return "text-yellow-500";
-      case "Finalizada":
-        return "text-green-500";
-      default:
-        return "text-gray-500";
+      case "Por hacer": return "text-red-500";
+      case "En Proceso": return "text-yellow-500";
+      case "Finalizada": return "text-green-500";
+      default: return "text-gray-500";
     }
   };
 
   const filteredTasks = parsedData.filter((tarea) => {
     return (
-      (filters.empleado === "" ||
-        tarea.empleado_asignado
-          .toLowerCase()
-          .includes(filters.empleado.toLowerCase())) &&
+      (filters.empleado === "" || tarea.empleado_asignado.toLowerCase().includes(filters.empleado.toLowerCase())) &&
       (filters.fecha === "" || tarea.fecha_asignacion === filters.fecha)
     );
   });
 
-  const tasksPorHacer = filteredTasks.filter(
-    (tarea) => tarea.estado === "Por hacer"
-  );
-  const tasksEnProceso = filteredTasks.filter(
-    (tarea) => tarea.estado === "En Proceso"
-  );
-  const tasksFinalizadas = filteredTasks.filter(
-    (tarea) => tarea.estado === "Finalizada"
-  );
-  const tasksSinAsignar = parsedData.filter(
-    (tarea) =>
-      tarea.empleado_asignado === "" ||
-      tarea.empleado_asignado === "Sin asignar"
-  );
+  const tasksPorHacer = filteredTasks.filter((t) => t.estado === "Por hacer");
+  const tasksEnProceso = filteredTasks.filter((t) => t.estado === "En Proceso");
+  const tasksFinalizadas = filteredTasks.filter((t) => t.estado === "Finalizada");
+  const tasksSinAsignar = parsedData.filter((t) => t.empleado_asignado === "" || t.empleado_asignado === "Sin asignar");
 
-  const paginatedPorHacer = tasksPorHacer.slice(
-    pagePorHacer * itemsPerPage,
-    (pagePorHacer + 1) * itemsPerPage
-  );
-  const paginatedEnProceso = tasksEnProceso.slice(
-    pageEnProceso * itemsPerPage,
-    (pageEnProceso + 1) * itemsPerPage
-  );
-  const paginatedFinalizadas = tasksFinalizadas.slice(
-    pageFinalizadas * itemsPerPage,
-    (pageFinalizadas + 1) * itemsPerPage
-  );
+  const paginatedPorHacer = tasksPorHacer.slice(pagePorHacer * itemsPerPage, (pagePorHacer + 1) * itemsPerPage);
+  const paginatedEnProceso = tasksEnProceso.slice(pageEnProceso * itemsPerPage, (pageEnProceso + 1) * itemsPerPage);
+  const paginatedFinalizadas = tasksFinalizadas.slice(pageFinalizadas * itemsPerPage, (pageFinalizadas + 1) * itemsPerPage);
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -117,12 +91,11 @@ export default function Tareas() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedTask(null);
+    setIsEditing(false);
   };
 
   const handleModalOpen = () => {
-    const newId = parsedData.length
-      ? Math.max(...parsedData.map((t) => t.id)) + 1
-      : 1;
+    const newId = parsedData.length ? Math.max(...parsedData.map((t) => t.id)) + 1 : 1;
     setNewTask({
       id: newId,
       descripcion: "",
@@ -132,19 +105,29 @@ export default function Tareas() {
       id_categoria: "",
     });
     setIsModalOpen(true);
+    setIsEditing(false);
+  };
+
+  const handleEdit = (tarea) => {
+    setNewTask({ ...tarea });
+    setIsEditing(true);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (tarea) => {
+    const categoria = categorias.find(cat => cat.id === tarea.id_categoria);
+    alert(`Estás a punto de eliminar la tarea "${tarea.descripcion}" que pertenece a la categoría: ${categoria?.descripcion || "No asignada"}`);
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewTask((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+    setNewTask((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSaveTask = () => {
-    console.log("Guardando nueva tarea:", newTask);
+    console.log(isEditing ? "Actualizando tarea:" : "Guardando nueva tarea:", newTask);
     setIsModalOpen(false);
+    setIsEditing(false);
   };
 
   const handleModalOpenAsignar = () => {
@@ -156,10 +139,7 @@ export default function Tareas() {
   };
 
   const handleEmpleadoChange = (e) => {
-    setSelectedTask({
-      ...selectedTask,
-      empleado_asignado: e.target.value,
-    });
+    setSelectedTask({ ...selectedTask, empleado_asignado: e.target.value });
   };
 
   const handleSaveAsignacion = () => {
@@ -168,7 +148,6 @@ export default function Tareas() {
     setSelectedTask(null);
   };
 
-  // Función para cambiar de página
   const handlePageChange = (page, setPage, totalLength) => {
     if (page >= 0 && page < Math.ceil(totalLength / itemsPerPage)) {
       setPage(page);
@@ -176,8 +155,11 @@ export default function Tareas() {
   };
 
   return (
+
+
+
     <>
-      <HeaderFuncional
+       <HeaderFuncional
         botones={["Añadir", "Asignar Usuario", "Calendario"]}
         acciones={{
           Añadir: handleModalOpen,
@@ -413,11 +395,11 @@ export default function Tareas() {
                           {tarea.descripcion}
                         </h3>
                         <div className="ml-auto flex gap-2">
-                          <button>
-                            <img className="w-6 h-6" src="editar.png" />
+                          <button onClick={() => handleEdit(tarea)}>
+                            <img className="w-6 h-6" src="editar.png" alt="Editar" />
                           </button>
-                          <button>
-                            <img className="w-6 h-6" src="eliminar.png" />
+                          <button onClick={() => handleDelete(tarea)}>
+                            <img className="w-6 h-6" src="eliminar.png" alt="Eliminar" />
                           </button>
                         </div>
                       </div>
@@ -444,8 +426,8 @@ export default function Tareas() {
                       }
                       disabled={currentPage === 0}
                       className={`px-4 py-2 rounded-lg ${currentPage === 0
-                          ? "bg-gray-300 cursor-not-allowed"
-                          : "bg-gray-500 text-white"
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-gray-500 text-white"
                         }`}
                     >
                       Anterior
@@ -459,8 +441,8 @@ export default function Tareas() {
                               handlePageChange(index, setPage, totalLength)
                             }
                             className={`px-4 py-2 rounded-lg ${currentPage === index
-                                ? "bg-gray-700 text-white"
-                                : "bg-gray-300 text-gray-700"
+                              ? "bg-gray-700 text-white"
+                              : "bg-gray-300 text-gray-700"
                               }`}
                           >
                             {index + 1}
@@ -476,8 +458,8 @@ export default function Tareas() {
                         currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
                       }
                       className={`px-4 py-2 rounded-lg ${currentPage + 1 >= Math.ceil(totalLength / itemsPerPage)
-                          ? "bg-gray-300 cursor-not-allowed"
-                          : "bg-gray-500 text-white"
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-gray-500 text-white"
                         }`}
                     >
                       Siguiente
