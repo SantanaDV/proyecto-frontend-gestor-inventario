@@ -115,6 +115,7 @@ export default function Tareas() {
     setNewTask({
       ...tarea,
       fecha_asignacion: tarea.fecha_asignacion.split('T')[0],
+      id_categoria: tarea.id_categoria ?? tarea.categoria?.id ?? ""
     });
     setIsEditing(true);
     setIsModalOpen(true);
@@ -150,6 +151,8 @@ export default function Tareas() {
       setPage(page);
     }
   };
+
+  
 
   return (
     <>
