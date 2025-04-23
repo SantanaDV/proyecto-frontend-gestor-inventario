@@ -17,10 +17,24 @@ function Login() {
 
   useEffect(() => {
     if (data) {
-      localStorage.setItem("authToken", data.token);
+      console.log("Respuesta de la API:", data);
+  
+      if (data.username) {
+        localStorage.setItem("userEmail", data.username);
+      } else {
+        console.error("No se encontró el correo (username) en la respuesta de la API");
+      }
+
+      if (data.token) {
+        localStorage.setItem("authToken", data.token);
+      } else {
+        console.error("No se encontró el token en la respuesta de la API");
+      }
+  
       navigate("/home");
     }
   }, [data, navigate]);
+  
 
   useEffect(() => {
     if (error) {

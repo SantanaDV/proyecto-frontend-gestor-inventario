@@ -8,7 +8,7 @@ import {
   MenuItems,
 } from "@headlessui/react";
 import LogoutButton from "../utilities/auth";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom"; // Importamos Link de react-router-dom
 import { useLocation } from "react-router-dom";
 
@@ -25,6 +25,8 @@ function classNames(...classes) {
 
 export default function Example() {
   const location = useLocation();
+  const userEmail = localStorage.getItem("userEmail"); // Asegúrate de guardar el email del usuario en el localStorage al iniciar sesión
+
   return (
     <Disclosure as="nav" className="bg-white">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -74,11 +76,7 @@ export default function Example() {
                 <MenuButton className="relative flex rounded-full bg-gray-800 text-sm focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-hidden">
                   <span className="absolute -inset-1.5" />
                   <span className="sr-only">Open user menu</span>
-                  <img
-                    alt=""
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                    className="size-8 rounded-full"
-                  />
+                  <span className="text-white px-4 py-2">{userEmail}</span> {/* Mostrar el correo del usuario */}
                 </MenuButton>
               </div>
               <MenuItems
@@ -88,21 +86,13 @@ export default function Example() {
                 <MenuItem>
                   <a
                     href="#"
-                    className="block px-4 py-2 text-sm text-gblack data-focus:bg-red-200 data-focus:outline-hidden"
-                  >
-                    Your Profile
-                  </a>
-                </MenuItem>
-                <MenuItem>
-                  <a
-                    href="#"
                     className="block px-4 py-2 text-sm text-black data-focus:bg-red-200 data-focus:outline-hidden"
                   >
-                    Settings
+                    Modificar Usuario
                   </a>
                 </MenuItem>
                 <MenuItem>
-                <LogoutButton />
+                  <LogoutButton />
                 </MenuItem>
               </MenuItems>
             </Menu>
