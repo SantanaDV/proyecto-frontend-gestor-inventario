@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 const cargarDatos = (data, setParsedData, setCategorias, setError) => {
   if (!data) return;
-
   if (Array.isArray(data)) {
     const productosOrdenados = data.sort(
       (a, b) => a.nombre?.localeCompare(b.nombre) || 0
@@ -27,7 +26,8 @@ const cargarDatos = (data, setParsedData, setCategorias, setError) => {
 
 export default function Inventario() {
   const navigate = useNavigate();
-  const { data, loading, error, setUri, setError } = useApi("api/producto", {});
+  const { data, loading, error, setUri, setError, setOptions } = useApi("api/producto", {});
+  const { data: dataCategoria, loading: loadingCategoria, error: errorCategoria, setUri: uriCategoria, setError: setErrorCate, setOptions: setOptionsCate } = useApi("api/categoria", {});
   const [parsedData, setParsedData] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
@@ -101,9 +101,8 @@ export default function Inventario() {
           <button
             key={i}
             onClick={() => setActual(i + 1)}
-            className={`px-3 py-1 rounded border ${
-              actual === i + 1 ? "bg-gray-600 text-white" : "bg-white"
-            }`}
+            className={`px-3 py-1 rounded border ${actual === i + 1 ? "bg-gray-600 text-white" : "bg-white"
+              }`}
           >
             {i + 1}
           </button>
@@ -163,11 +162,70 @@ export default function Inventario() {
     }));
   };
 
-  const handleSaveProduct = (e) => {
+  const handleSaveProduct = async (e) => {
     e.preventDefault();
-    console.log(isEditing ? "Editando producto:" : "Guardando producto:", newProduct);
-    setIsModalOpen(false);
+  
+    const { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct;
+  
+    // Validaciones más estrictas
+    if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
+    if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) return alert("Cantidad no válida.");
+    if (!categoria || isNaN(categoria)) return alert("El ID de la categoría no es válido.");
+    if (!estado) return alert("El estado es obligatorio.");
+    if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime())) return alert("La fecha de creación no es válida.");
+  
+    // Asegurarse de que fecha_creacion esté en formato ISO
+    const fechaISO = new Date(fecha_creacion).toISOString();
+    if (isNaN(new Date(fechaISO).getTime())) return alert("La fecha de creación no es válida.");
+  
+    const formData = new FormData();
+    const method = isEditing ? "PUT" : "POST";
+  
+    // Crear objeto de datos del producto
+    const productoSinImagen = {
+      id_producto: isEditing ? id_producto : null, // Solo en edición incluimos el ID
+      nombre,
+      cantidad,
+      id_categoria: categoria, // Asegúrate de que este es el ID de la categoría (no su descripción)
+      estado,
+      fecha_creacion: fechaISO, // Formato correcto ISO 8601
+    };
+  
+    // Si es una nueva creación, asegurarse de que se haya seleccionado una imagen
+    if (url_img instanceof File) {
+      formData.append("imagen", url_img);
+    } else if (!isEditing) {
+      // Si no es una imagen válida en creación, podemos retornar para evitar enviar la solicitud
+      return alert("Debes seleccionar una imagen si es una nueva creación.");
+    }
+  
+    // Si no es edición, agregar el producto entero como un Blob
+    if (!isEditing) {
+      formData.append("producto", new Blob([JSON.stringify(productoSinImagen)]));
+    } else {
+      // En la edición solo agregamos el ID del producto
+      formData.append("producto", new Blob([JSON.stringify({ id_producto })]));
+    }
+  
+    // Imprimir el contenido del formData
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
+    }
+  
+    // Configurar la solicitud
+    setOptions({
+      method,
+      body: formData,
+    })
+    
+    // setIsModalOpen(false);
+        // setIsEditing(false);
+        // setSelectedFileName("");
   };
+  
+  
+
+
 
   const handleEditProduct = (producto) => {
     // Formatear la fecha para que no tenga la parte de la hora
@@ -243,7 +301,7 @@ export default function Inventario() {
                   </div>
                 </div>
                 <img
-                  src={"http://localhost:8080/imagen/"+producto.url_img}
+                  src={"http://localhost:8080/imagen/" + producto.url_img}
                   alt={producto.nombre}
                   onClick={() => handleEditProduct(producto)}
                   className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
@@ -279,7 +337,7 @@ export default function Inventario() {
                   </div>
                 </div>
                 <img
-                 src={"http://localhost:8080/imagen/"+producto.url_img}
+                  src={"http://localhost:8080/imagen/" + producto.url_img}
                   alt={producto.nombre}
                   onClick={() => handleEditProduct(producto)}
                   className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
@@ -364,10 +422,11 @@ export default function Inventario() {
                   className="border p-2 rounded w-full"
                   required
                 >
+                  {console.log(dataCategoria)}
                   <option value="">Selecciona una categoría</option>
-                  {categorias.map((cat, idx) => (
-                    <option key={idx} value={cat}>
-                      {cat}
+                  {dataCategoria.map((cat, idx) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.descripcion}
                     </option>
                   ))}
                 </select>

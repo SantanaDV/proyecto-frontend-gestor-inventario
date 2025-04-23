@@ -20,9 +20,9 @@ const useApi = (endpoint, options = {}) => {
           url: uri,
           method: currentOptions.method || 'GET',
           headers: {
-            'Content-Type': 'application/json',
             ...(currentOptions.headers || {}),
           },
+          
           withCredentials: true,
           data: currentOptions.body || undefined,
         });
