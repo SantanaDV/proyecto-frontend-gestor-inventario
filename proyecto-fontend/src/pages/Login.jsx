@@ -10,7 +10,8 @@ function Login() {
   const { data, loading, error, setUri, setError, setOptions, currentOptions } = useApi("login", false);
 
   useEffect(() => {
-    if (localStorage.getItem("authToken")) {
+    // Verifica si ya hay un token y nombre en localStorage antes de redirigir al usuario
+    if (localStorage.getItem("authToken") && localStorage.getItem("userName")) {
       navigate("/home");
     }
   }, [navigate]);
@@ -18,9 +19,25 @@ function Login() {
   useEffect(() => {
     if (data) {
       localStorage.setItem("authToken", data.token);
-      navigate("/home");
+      localStorage.setItem("userEmail", data.username);  // Asegúrate de guardar el email también
+  
+      fetch(`http://localhost:8080/api/usuario/perfil?email=${data.username}`, {
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((perfil) => {
+          localStorage.setItem("userName", perfil.nombre);
+          navigate("/home");
+        })
+        .catch((err) => {
+          console.error("Error al obtener el perfil:", err);
+          navigate("/home");
+        });
     }
   }, [data, navigate]);
+  
 
   useEffect(() => {
     if (error) {
