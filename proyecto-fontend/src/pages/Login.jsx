@@ -17,24 +17,25 @@ function Login() {
 
   useEffect(() => {
     if (data) {
-      console.log("Respuesta de la API:", data);
+      localStorage.setItem("authToken", data.token);
   
-      if (data.username) {
-        localStorage.setItem("userEmail", data.username);
-      } else {
-        console.error("No se encontró el correo (username) en la respuesta de la API");
-      }
-
-      if (data.token) {
-        localStorage.setItem("authToken", data.token);
-      } else {
-        console.error("No se encontró el token en la respuesta de la API");
-      }
-  
-      navigate("/home");
+      // Obtener perfil del usuario
+      fetch(`http://localhost:8080/api/usuario/perfil?email=${data.username}`, {
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((perfil) => {
+          localStorage.setItem("userName", perfil.nombre);  // Guardando el nombre en el localStorage
+          navigate("/home");
+        })
+        .catch((err) => {
+          console.error("Error al obtener el perfil:", err);
+          navigate("/home");
+        });
     }
   }, [data, navigate]);
-  
 
   useEffect(() => {
     if (error) {
