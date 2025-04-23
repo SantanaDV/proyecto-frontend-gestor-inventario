@@ -204,24 +204,29 @@ export default function Inventario() {
       formData.append("producto", new Blob([JSON.stringify(productoSinImagen)]));
     } else {
       // En la edición solo agregamos el ID del producto
-      formData.append("producto", new Blob([JSON.stringify({ id_producto })]));
-    }
-  
-    // Imprimir el contenido del formData
-    for (let pair of formData.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
+      formData.append("id_producto", new Blob([JSON.stringify({ id_producto })]));
+      formData.append("nombre", new Blob([JSON.stringify({ nombre })]));
+      formData.append("cantidad", new Blob([JSON.stringify({ cantidad })]));
+      formData.append("id_categoria", new Blob([JSON.stringify({ categoria })]));
+      formData.append("estado", new Blob([JSON.stringify({ estado })]));
+      formData.append("fecha_creacion", new Blob([JSON.stringify({ fechaISO })]));
     }
   
     // Configurar la solicitud
     setOptions({
       method,
       body: formData,
-    })
-    
-    // setIsModalOpen(false);
-        // setIsEditing(false);
-        // setSelectedFileName("");
+    });
+  
+    // Opcionalmente, puedes agregar un log para el JSON si es necesario
+
+    console.log("JSON del producto enviado:", JSON.stringify(productoSinImagen));
+
+    //setIsEditing(false)
+    //setIsModalOpen(false);
+    //setSelectedFileName("");
   };
+  
   
   
 
@@ -422,7 +427,6 @@ export default function Inventario() {
                   className="border p-2 rounded w-full"
                   required
                 >
-                  {console.log(dataCategoria)}
                   <option value="">Selecciona una categoría</option>
                   {dataCategoria.map((cat, idx) => (
                     <option key={cat.id} value={cat.id}>
