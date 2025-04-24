@@ -247,9 +247,36 @@ export default function Inventario() {
   };
 
   const handleDeleteProduct = (id_producto) => {
+    console.log(id_producto); // Ahora solo pasas el id_producto
     const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
     if (confirmDelete) {
-      // Aquí eliminamos el producto
+      const token = localStorage.getItem("authToken");  // Obtener el token del localStorage
+  
+      if (!token) {
+        alert("No tienes permiso para eliminar el producto. No se encontró el token.");
+        return;
+      }
+  
+      // Hacer la solicitud DELETE al backend con el token
+      fetch(`http://localhost:8080/api/producto/${id_producto}`, {  // Ahora usas id_producto
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,  // Añadir el token en los headers
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            // Si la respuesta es exitosa, eliminar el producto de la lista local
+            setParsedData((prevData) => prevData.filter((producto) => producto.id_producto !== id_producto)); // Filtras por id_producto
+            alert("Producto eliminado con éxito");
+          } else {
+            alert("Error al eliminar el producto");
+          }
+        })
+        .catch((error) => {
+          console.error("Error al eliminar el producto:", error);
+          alert("Hubo un error al eliminar el producto");
+        });
     }
   };
 
