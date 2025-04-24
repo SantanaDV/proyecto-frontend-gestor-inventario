@@ -226,11 +226,6 @@ export default function Inventario() {
     //setIsModalOpen(false);
     //setSelectedFileName("");
   };
-  
-  
-  
-
-
 
   const handleEditProduct = (producto) => {
     // Formatear la fecha para que no tenga la parte de la hora
@@ -285,7 +280,7 @@ export default function Inventario() {
         botones={["Añadir"]}
         acciones={{ Añadir: handleModalOpen }}
       />
-
+  
       <div className="flex justify-center gap-4 mt-6">
         <select
           value={categoriaFiltro}
@@ -299,7 +294,7 @@ export default function Inventario() {
             </option>
           ))}
         </select>
-
+  
         <input
           type="number"
           placeholder="Cantidad máxima"
@@ -308,10 +303,13 @@ export default function Inventario() {
           className="border p-2 rounded"
         />
       </div>
-
+  
       <div className="grid grid-cols-2 gap-5 mt-5 p-8">
         <div>
           <h2 className="text-2xl font-medium text-center mb-4">Productos Activos</h2>
+          <div className="mb-4">
+            <Paginacion total={productosActivos.length} actual={paginaActiva} setActual={setPaginaActiva} />
+          </div>
           {productosActivosPaginados.length === 0 ? (
             <p>No hay productos activos.</p>
           ) : (
@@ -343,11 +341,13 @@ export default function Inventario() {
               </div>
             ))
           )}
-          <Paginacion total={productosActivos.length} actual={paginaActiva} setActual={setPaginaActiva} />
         </div>
-
+  
         <div>
           <h2 className="text-2xl font-medium text-center mb-4">Productos Desactivados</h2>
+          <div className="mb-4">
+            <Paginacion total={productosDesactivados.length} actual={paginaDesactivada} setActual={setPaginaDesactivada} />
+          </div>
           {productosDesactivadosPaginados.length === 0 ? (
             <p>No hay productos desactivados.</p>
           ) : (
@@ -379,10 +379,9 @@ export default function Inventario() {
               </div>
             ))
           )}
-          <Paginacion total={productosDesactivados.length} actual={paginaDesactivada} setActual={setPaginaDesactivada} />
         </div>
       </div>
-
+  
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-1/3">
@@ -504,5 +503,5 @@ export default function Inventario() {
         </div>
       )}
     </>
-  );
+  );  
 }
