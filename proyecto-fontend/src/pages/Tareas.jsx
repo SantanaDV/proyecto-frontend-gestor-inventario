@@ -436,6 +436,28 @@ export default function Tareas() {
                 <h2 className="text-2xl font-medium text-center mb-4">
                   Tareas {title}
                 </h2>
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={() =>
+                      handlePageChange(currentPage - 1, setPage, totalLength)
+                    }
+                    disabled={currentPage <= 0}
+                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    onClick={() =>
+                      handlePageChange(currentPage + 1, setPage, totalLength)
+                    }
+                    disabled={
+                      currentPage >= Math.ceil(totalLength / itemsPerPage) - 1
+                    }
+                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                  >
+                    Siguiente
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 gap-6">
                   {paginatedTasks.map((tarea) => (
                     <div
@@ -479,28 +501,6 @@ export default function Tareas() {
                       </p>
                     </div>
                   ))}
-                </div>
-                <div className="flex justify-center mt-4">
-                  <button
-                    onClick={() =>
-                      handlePageChange(currentPage - 1, setPage, totalLength)
-                    }
-                    disabled={currentPage <= 0}
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
-                  >
-                    Anterior
-                  </button>
-                  <button
-                    onClick={() =>
-                      handlePageChange(currentPage + 1, setPage, totalLength)
-                    }
-                    disabled={
-                      currentPage >= Math.ceil(totalLength / itemsPerPage) - 1
-                    }
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
-                  >
-                    Siguiente
-                  </button>
                 </div>
               </div>
             )
