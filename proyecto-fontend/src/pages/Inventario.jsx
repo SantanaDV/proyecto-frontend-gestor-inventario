@@ -247,7 +247,6 @@ export default function Inventario() {
   };
 
   const handleDeleteProduct = (id_producto) => {
-    console.log(id_producto); // Ahora solo pasas el id_producto
     const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
     if (confirmDelete) {
       const token = localStorage.getItem("authToken");  // Obtener el token del localStorage

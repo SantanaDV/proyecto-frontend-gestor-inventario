@@ -180,7 +180,6 @@ export default function Tareas() {
   };
 
   const handleDelete = (tarea) => {
-    console.log(tarea); 
     const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar esta tarea?");
     if (confirmDelete) {
       const id_tarea = tarea.id;
