@@ -50,12 +50,14 @@ export default function Tareas() {
 
   useEffect(() => {
     if (Array.isArray(categoriasData)) setCategorias(categoriasData);
-    else if (categoriasData) setErrorCategorias("Los datos de categoría no son válidos");
+    else if (categoriasData)
+      setErrorCategorias("Los datos de categoría no son válidos");
   }, [categoriasData, setErrorCategorias]);
 
   useEffect(() => {
     if (Array.isArray(empleadosData)) setEmpleadosDisponibles(empleadosData);
-    else if (empleadosData) setErrorEmpleados("Los datos de empleados no son válidos");
+    else if (empleadosData)
+      setErrorEmpleados("Los datos de empleados no son válidos");
   }, [empleadosData, setErrorEmpleados]);
 
   useEffect(() => {
@@ -66,26 +68,47 @@ export default function Tareas() {
 
   const getStatusColor = (estado) => {
     switch (estado) {
-      case "Por hacer": return "text-red-500";
-      case "En Proceso": return "text-yellow-500";
-      case "Finalizada": return "text-green-500";
-      default: return "text-gray-500";
+      case "Por hacer":
+        return "text-red-500";
+      case "En Proceso":
+        return "text-yellow-500";
+      case "Finalizada":
+        return "text-green-500";
+      default:
+        return "text-gray-500";
     }
   };
 
-  const filteredTasks = parsedData.filter(tarea => (
-    (filters.empleado === "" || tarea.empleado_asignado.toLowerCase().includes(filters.empleado.toLowerCase())) &&
-    (filters.fecha === "" || tarea.fecha_asignacion === filters.fecha)
-  ));
+  const filteredTasks = parsedData.filter(
+    (tarea) =>
+      (filters.empleado === "" ||
+        tarea.empleado_asignado
+          .toLowerCase()
+          .includes(filters.empleado.toLowerCase())) &&
+      (filters.fecha === "" || tarea.fecha_asignacion === filters.fecha)
+  );
 
-  const tasksPorHacer = filteredTasks.filter(t => t.estado === "Por hacer");
-  const tasksEnProceso = filteredTasks.filter(t => t.estado === "En Proceso");
-  const tasksFinalizadas = filteredTasks.filter(t => t.estado === "Finalizada");
-  const tasksSinAsignar = parsedData.filter(t => !t.empleado_asignado || t.empleado_asignado === "Sin asignar");
+  const tasksPorHacer = filteredTasks.filter((t) => t.estado === "Por hacer");
+  const tasksEnProceso = filteredTasks.filter((t) => t.estado === "En Proceso");
+  const tasksFinalizadas = filteredTasks.filter(
+    (t) => t.estado === "Finalizada"
+  );
+  const tasksSinAsignar = parsedData.filter(
+    (t) => !t.empleado_asignado || t.empleado_asignado === "Sin asignar"
+  );
 
-  const paginatedPorHacer = tasksPorHacer.slice(pagePorHacer * itemsPerPage, (pagePorHacer + 1) * itemsPerPage);
-  const paginatedEnProceso = tasksEnProceso.slice(pageEnProceso * itemsPerPage, (pageEnProceso + 1) * itemsPerPage);
-  const paginatedFinalizadas = tasksFinalizadas.slice(pageFinalizadas * itemsPerPage, (pageFinalizadas + 1) * itemsPerPage);
+  const paginatedPorHacer = tasksPorHacer.slice(
+    pagePorHacer * itemsPerPage,
+    (pagePorHacer + 1) * itemsPerPage
+  );
+  const paginatedEnProceso = tasksEnProceso.slice(
+    pageEnProceso * itemsPerPage,
+    (pageEnProceso + 1) * itemsPerPage
+  );
+  const paginatedFinalizadas = tasksFinalizadas.slice(
+    pageFinalizadas * itemsPerPage,
+    (pageFinalizadas + 1) * itemsPerPage
+  );
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -98,7 +121,9 @@ export default function Tareas() {
   };
 
   const handleModalOpen = () => {
-    const newId = parsedData.length ? Math.max(...parsedData.map(t => t.id)) + 1 : 1;
+    const newId = parsedData.length
+      ? Math.max(...parsedData.map((t) => t.id)) + 1
+      : 1;
     setNewTask({
       id: newId,
       descripcion: "",
@@ -114,7 +139,7 @@ export default function Tareas() {
   const handleEdit = (tarea) => {
     setNewTask({
       ...tarea,
-      fecha_asignacion: tarea.fecha_asignacion.split('T')[0],
+      fecha_asignacion: tarea.fecha_asignacion.split("T")[0],
     });
     setIsEditing(true);
     setIsModalOpen(true);
@@ -126,7 +151,10 @@ export default function Tareas() {
   };
 
   const handleSaveTask = () => {
-    console.log(isEditing ? "Actualizando tarea:" : "Guardando nueva tarea:", newTask);
+    console.log(
+      isEditing ? "Actualizando tarea:" : "Guardando nueva tarea:",
+      newTask
+    );
     setIsModalOpen(false);
     setIsEditing(false);
   };
@@ -151,12 +179,35 @@ export default function Tareas() {
     }
   };
 
-  const handleDelete = (id_producto) => {
-    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
+  const handleDelete = (tarea) => {
+    console.log(tarea); 
+    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar esta tarea?");
     if (confirmDelete) {
-      // Aquí eliminamos
+      const id_tarea = tarea.id;
+      const token = localStorage.getItem("authToken");
+      // Hacer la solicitud DELETE al backend
+      fetch(`http://localhost:8080/api/tarea/${id_tarea}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,  // Añadir el token en los headers
+        }
+      })
+        .then((response) => {
+          if (response.ok) {
+            // Actualizar el estado para eliminar la tarea de la lista
+            setParsedData((prevData) => prevData.filter((t) => t.id !== id_tarea));
+            alert("Tarea eliminada con éxito");
+          } else {
+            alert("Error al eliminar la tarea");
+          }
+        })
+        .catch((error) => {
+          console.error("Error al eliminar la tarea:", error);
+          alert("Hubo un error al eliminar la tarea");
+        });
     }
   };
+
   return (
     <>
       <HeaderFuncional
@@ -172,7 +223,9 @@ export default function Tareas() {
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg w-1/3">
-              <h3 className="text-2xl mb-4 text-center">{isEditing ? "Editar Tarea" : "Añadir Tarea"}</h3>
+              <h3 className="text-2xl mb-4 text-center">
+                {isEditing ? "Editar Tarea" : "Añadir Tarea"}
+              </h3>
               {/* Campos del formulario */}
               <div className="mb-4">
                 <label className="block text-sm font-medium">ID</label>
@@ -396,10 +449,18 @@ export default function Tareas() {
                         </h3>
                         <div className="ml-auto flex gap-2">
                           <button onClick={() => handleEdit(tarea)}>
-                            <img className="w-6 h-6" src="editar.png" alt="Editar" />
+                            <img
+                              className="w-6 h-6"
+                              src="editar.png"
+                              alt="Editar"
+                            />
                           </button>
                           <button onClick={() => handleDelete(tarea)}>
-                            <img className="w-6 h-6" src="eliminar.png" alt="Eliminar" />
+                            <img
+                              className="w-6 h-6"
+                              src="eliminar.png"
+                              alt="Eliminar"
+                            />
                           </button>
                         </div>
                       </div>
@@ -422,15 +483,21 @@ export default function Tareas() {
                 </div>
                 <div className="flex justify-center mt-4">
                   <button
-                    onClick={() => handlePageChange(currentPage - 1, setPage, totalLength)}
+                    onClick={() =>
+                      handlePageChange(currentPage - 1, setPage, totalLength)
+                    }
                     disabled={currentPage <= 0}
                     className="bg-blue-500 text-white px-4 py-2 rounded"
                   >
                     Anterior
                   </button>
                   <button
-                    onClick={() => handlePageChange(currentPage + 1, setPage, totalLength)}
-                    disabled={currentPage >= Math.ceil(totalLength / itemsPerPage) - 1}
+                    onClick={() =>
+                      handlePageChange(currentPage + 1, setPage, totalLength)
+                    }
+                    disabled={
+                      currentPage >= Math.ceil(totalLength / itemsPerPage) - 1
+                    }
                     className="bg-blue-500 text-white px-4 py-2 rounded"
                   >
                     Siguiente
