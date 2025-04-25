@@ -4,7 +4,7 @@ import HeaderFuncional from "../components/HeaderFuncional";
 import { useNavigate } from "react-router-dom";
 
 export default function Tareas() {
-  const { data, loading, error, setUri, setError } = useApi("api/tarea", {});
+  const { data, loading, error, setUri, setError,setOptions } = useApi("api/tarea", {});
   const {
     data: categoriasData,
     loading: loadingCategorias,
@@ -19,7 +19,13 @@ export default function Tareas() {
     error: errorEmpleados,
     setUri: setUriEmpleados,
     setError: setErrorEmpleados,
-  } = useApi("api/empleado", {});
+  } = useApi("api/usuario/admin/listarUsuarios", {});
+
+  useEffect(() => {
+    if (Array.isArray(empleadosData)) setEmpleadosDisponibles(empleadosData);
+    else if (empleadosData)
+      setErrorEmpleados("Los datos de empleados no son válidos");
+  }, [empleadosData, setErrorEmpleados]);
 
   const [categorias, setCategorias] = useState([]);
   const [parsedData, setParsedData] = useState([]);
@@ -155,6 +161,11 @@ export default function Tareas() {
       isEditing ? "Actualizando tarea:" : "Guardando nueva tarea:",
       newTask
     );
+    setUri("api/tarea");
+    setOptions({
+      method: "POST",
+      body: newTask,
+    });
     setIsModalOpen(false);
     setIsEditing(false);
   };
@@ -163,12 +174,14 @@ export default function Tareas() {
 
   const handleTareaSeleccionada = (tarea) => setSelectedTask(tarea);
 
-  const handleEmpleadoChange = (e) => {
-    setSelectedTask({ ...selectedTask, empleado_asignado: e.target.value });
-  };
 
   const handleSaveAsignacion = () => {
     console.log("Empleado asignado:", selectedTask);
+    setUri("api/tarea");
+    setOptions({
+      method: "PUT",
+      body: newTask,
+    });
     setIsModalOpenAsignar(false);
     setSelectedTask(null);
   };
@@ -256,14 +269,23 @@ export default function Tareas() {
                 <label className="block text-sm font-medium">
                   Empleado Asignado
                 </label>
-                <input
-                  type="text"
+                <select
                   name="empleado_asignado"
                   value={newTask.empleado_asignado}
                   onChange={handleInputChange}
                   className="border p-2 rounded w-full"
                   required
-                />
+                >
+                  <option value="">Selecciona un empleado</option>
+                  {empleadosData.map((empleado) => (
+                    <option
+                      key={empleado.id_usuario}
+                      value={empleado.id_usuario}
+                    >
+                      {empleado.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium">Estado</label>
@@ -360,17 +382,22 @@ export default function Tareas() {
                       Asignar Usuario a: {selectedTask.descripcion}
                     </h4>
                     <select
-                      value={selectedTask.empleado_asignado}
-                      onChange={handleEmpleadoChange}
-                      className="border p-2 rounded w-full"
+                  name="empleado_asignado"
+                  value={newTask.empleado_asignado}
+                  onChange={handleInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                >
+                  <option value="">Selecciona un empleado</option>
+                  {empleadosData.map((empleado) => (
+                    <option
+                      key={empleado.id_usuario}
+                      value={empleado.id_usuario}
                     >
-                      <option value="">Seleccionar Empleado</option>
-                      {empleadosDisponibles.map((e) => (
-                        <option key={e.id} value={e.empleado_asignado}>
-                          {e.empleado_asignado}
-                        </option>
-                      ))}
-                    </select>
+                      {empleado.nombre}
+                    </option>
+                  ))}
+                </select>
                   </div>
                 )}
               </div>
