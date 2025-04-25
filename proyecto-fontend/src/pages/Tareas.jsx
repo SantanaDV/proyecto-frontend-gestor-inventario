@@ -180,7 +180,9 @@ export default function Tareas() {
   };
 
   const handleDelete = (tarea) => {
-    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar esta tarea?");
+    const confirmDelete = window.confirm(
+      "¿Estás seguro de que deseas eliminar esta tarea?"
+    );
     if (confirmDelete) {
       const id_tarea = tarea.id;
       const token = localStorage.getItem("authToken");
@@ -188,13 +190,15 @@ export default function Tareas() {
       fetch(`http://localhost:8080/api/tarea/${id_tarea}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`,  // Añadir el token en los headers
-        }
+          Authorization: `Bearer ${token}`, // Añadir el token en los headers
+        },
       })
         .then((response) => {
           if (response.ok) {
             // Actualizar el estado para eliminar la tarea de la lista
-            setParsedData((prevData) => prevData.filter((t) => t.id !== id_tarea));
+            setParsedData((prevData) =>
+              prevData.filter((t) => t.id !== id_tarea)
+            );
             alert("Tarea eliminada con éxito");
           } else {
             alert("Error al eliminar la tarea");
@@ -219,6 +223,7 @@ export default function Tareas() {
       />
 
       <div className="p-6">
+        {/* Modal de Añadir / Editar */}
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg w-1/3">
@@ -321,6 +326,7 @@ export default function Tareas() {
           </div>
         )}
 
+        {/* Modal de Asignar Usuario */}
         {isModalOpenAsignar && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg w-1/3">
@@ -386,6 +392,7 @@ export default function Tareas() {
           </div>
         )}
 
+        {/* Filtro */}
         <div className="flex justify-center gap-4 mb-4">
           <input
             type="text"
@@ -397,6 +404,7 @@ export default function Tareas() {
           />
         </div>
 
+        {/* Tarjetas por categoría */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {[
             [
@@ -436,16 +444,39 @@ export default function Tareas() {
                 <h2 className="text-2xl font-medium text-center mb-4">
                   Tareas {title}
                 </h2>
-                <div className="flex justify-center mt-4">
+                {/* Paginación */}
+                <div className="flex justify-center items-center mt-4 gap-2 flex-wrap">
                   <button
                     onClick={() =>
                       handlePageChange(currentPage - 1, setPage, totalLength)
                     }
                     disabled={currentPage <= 0}
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                    className={`px-3 py-1 border rounded ${
+                      currentPage <= 0
+                        ? "bg-gray-300 cursor-not-allowed text-gray-600"
+                        : "bg-gray-300 hover:bg-gray-400"
+                    }`}
                   >
                     Anterior
                   </button>
+                  {Array.from(
+                    { length: Math.ceil(totalLength / itemsPerPage) },
+                    (_, i) => (
+                      <button
+                        key={i}
+                        onClick={() =>
+                          handlePageChange(i, setPage, totalLength)
+                        }
+                        className={`px-3 py-1 rounded border ${
+                          i === currentPage
+                            ? "bg-gray-600 text-white"
+                            : "bg-white hover:bg-gray-400"
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    )
+                  )}
                   <button
                     onClick={() =>
                       handlePageChange(currentPage + 1, setPage, totalLength)
@@ -453,19 +484,23 @@ export default function Tareas() {
                     disabled={
                       currentPage >= Math.ceil(totalLength / itemsPerPage) - 1
                     }
-                    className="bg-blue-500 text-white px-4 py-2 rounded"
+                    className={`px-3 py-1 border rounded ${
+                      currentPage >= Math.ceil(totalLength / itemsPerPage) - 1
+                        ? "bg-gray-300 cursor-not-allowed text-gray-600"
+                        : "bg-gray-300 hover:bg-gray-400"
+                    }`}
                   >
                     Siguiente
                   </button>
                 </div>
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 gap-6 mt-4">
                   {paginatedTasks.map((tarea) => (
                     <div
                       key={tarea.id}
                       className={`border border-gray-300 rounded-lg shadow-lg p-5 ${bgColor}`}
                     >
                       <div className="flex">
-                        <h3 className="text-lg font-semibold text-blue-600">
+                        <h3 className="text-lg font-semibold text-gray-600">
                           {tarea.descripcion}
                         </h3>
                         <div className="ml-auto flex gap-2">
