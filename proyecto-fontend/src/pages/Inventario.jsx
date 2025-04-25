@@ -118,7 +118,11 @@ export default function Inventario() {
     );
   };
 
-  const handleModalClose = () => setIsModalOpen(false);
+  const handleModalClose = () =>  {
+    setIsModalOpen(false);
+    setUri("api/producto");
+  } 
+    
 
   const handleModalOpen = () => {
     const sortedData = [...parsedData].sort(
@@ -161,71 +165,78 @@ export default function Inventario() {
       [name]: value,
     }));
   };
-
   const handleSaveProduct = async (e) => {
-    e.preventDefault();
-  
-    const { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct;
-  
-    // Validaciones más estrictas
-    if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
-    if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) return alert("Cantidad no válida.");
-    if (!categoria || isNaN(categoria)) return alert("El ID de la categoría no es válido.");
-    if (!estado) return alert("El estado es obligatorio.");
-    if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime())) return alert("La fecha de creación no es válida.");
-  
-    // Asegurarse de que fecha_creacion esté en formato ISO
-    const fechaISO = new Date(fecha_creacion).toISOString();
-    if (isNaN(new Date(fechaISO).getTime())) return alert("La fecha de creación no es válida.");
-  
-    const formData = new FormData();
-    const method = isEditing ? "PUT" : "POST";
-  
-    // Crear objeto de datos del producto
-    const productoSinImagen = {
-      id_producto: isEditing ? id_producto : null, // Solo en edición incluimos el ID
-      nombre,
-      cantidad,
-      id_categoria: categoria, // Asegúrate de que este es el ID de la categoría (no su descripción)
-      estado,
-      fecha_creacion: fechaISO, // Formato correcto ISO 8601
-    };
-  
-    // Si es una nueva creación, asegurarse de que se haya seleccionado una imagen
-    if (url_img instanceof File) {
-      formData.append("imagen", url_img);
-    } else if (!isEditing) {
-      // Si no es una imagen válida en creación, podemos retornar para evitar enviar la solicitud
-      return alert("Debes seleccionar una imagen si es una nueva creación.");
-    }
-  
-    // Si no es edición, agregar el producto entero como un Blob
-    if (!isEditing) {
-      formData.append("producto", new Blob([JSON.stringify(productoSinImagen)]));
-    } else {
-      // En la edición solo agregamos el ID del producto
-      formData.append("id_producto", new Blob([JSON.stringify({ id_producto })]));
-      formData.append("nombre", new Blob([JSON.stringify({ nombre })]));
-      formData.append("cantidad", new Blob([JSON.stringify({ cantidad })]));
-      formData.append("id_categoria", new Blob([JSON.stringify({ categoria })]));
-      formData.append("estado", new Blob([JSON.stringify({ estado })]));
-      formData.append("fecha_creacion", new Blob([JSON.stringify({ fechaISO })]));
-    }
-  
-    // Configurar la solicitud
+  e.preventDefault();
+
+  const { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct;
+
+  // Validaciones
+  if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
+  if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) return alert("Cantidad no válida.");
+  if (!categoria || isNaN(categoria)) return alert("El ID de la categoría no es válido.");
+  if (!estado) return alert("El estado es obligatorio.");
+  if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime())) return alert("La fecha de creación no es válida.");
+
+  const fechaISO = new Date(fecha_creacion).toISOString();
+
+  const productoSinImagen = {
+    id_producto: isEditing ? id_producto : null,
+    nombre,
+    cantidad,
+    id_categoria: categoria,
+    estado,
+    fecha_creacion: fechaISO,
+  };
+
+  const formData = new FormData();
+
+  // --- CASO: CREACIÓN ---
+  if (!isEditing) {
+    if (!(url_img instanceof File)) return alert("Debes seleccionar una imagen para crear un nuevo producto.");
+    formData.append("imagen", url_img);
+    formData.append("producto", new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" }));
+
     setOptions({
-      method,
+      method: "POST",
       body: formData,
     });
-  
-    // Opcionalmente, puedes agregar un log para el JSON si es necesario
+  }
 
-    console.log("JSON del producto enviado:", JSON.stringify(productoSinImagen));
+  // --- CASO: EDICIÓN ---
+  else {
+    if (!(url_img instanceof File)) {
+      productoSinImagen.url_img = newProduct.url_img || ""; // Mantener la imagen si no se pasa una nueva
+    } else {
+      formData.append("imagen", url_img);
+    }
 
-    //setIsEditing(false)
-    //setIsModalOpen(false);
-    //setSelectedFileName("");
-  };
+    formData.append("producto", new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" }));
+
+    setOptions({
+      method: "PUT",
+      body: formData,
+    });
+  }
+
+  // Una vez que se guarda el producto, actualizar la lista
+  if (!isEditing) {
+    // Producto nuevo
+    setParsedData((prevData) => [...prevData, productoSinImagen]);
+  } else {
+    // Producto actualizado
+    setParsedData((prevData) =>
+      prevData.map((producto) =>
+        producto.id_producto === id_producto ? productoSinImagen : producto
+      )
+    );
+  }
+
+  setIsEditing(false);
+  setIsModalOpen(false);
+  setSelectedFileName("");
+};
+
+
 
   const handleEditProduct = (producto) => {
     // Formatear la fecha para que no tenga la parte de la hora
