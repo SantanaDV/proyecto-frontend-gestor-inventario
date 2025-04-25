@@ -3,27 +3,6 @@ import useApi from "../utilities/apiComunicator";
 import HeaderFuncional from "../components/HeaderFuncional";
 import { useNavigate } from "react-router-dom";
 
-const cargarDatos = (data, setParsedData, setCategorias, setError) => {
-  if (!data) return;
-  if (Array.isArray(data)) {
-    const productosOrdenados = data.sort(
-      (a, b) => a.nombre?.localeCompare(b.nombre) || 0
-    );
-    setParsedData(productosOrdenados);
-    const categoriasUnicas = [
-      ...new Set(
-        productosOrdenados.map(
-          (p) => p.categoria?.descripcion || "Sin categoría"
-        )
-      ),
-    ];
-    setCategorias(categoriasUnicas);
-  } else {
-    setError("Los datos no son válidos");
-    setParsedData([]);
-  }
-};
-
 export default function Inventario() {
   const navigate = useNavigate();
   const { data, loading, error, setUri, setError, setOptions } = useApi("api/producto", {});
@@ -57,8 +36,26 @@ export default function Inventario() {
   }, [navigate]);
 
   useEffect(() => {
-    cargarDatos(data, setParsedData, setCategorias, setError);
-  }, [data]);
+    if (!data) return;
+
+    if (Array.isArray(data)) {
+      const productosOrdenados = data.sort(
+        (a, b) => a.nombre?.localeCompare(b.nombre) || 0
+      );
+      setParsedData(productosOrdenados);
+      const categoriasUnicas = [
+        ...new Set(
+          productosOrdenados.map(
+            (p) => p.categoria?.descripcion || "Sin categoría"
+          )
+        ),
+      ];
+      setCategorias(categoriasUnicas);
+    } else {
+      setError("Los datos no son válidos");
+      setParsedData([]);
+    }
+  }, [data, setError]);
 
   const productosFiltrados = parsedData.filter((producto) => {
     const categoriaValida = producto.categoria?.descripcion || "Sin categoría";
@@ -120,7 +117,7 @@ export default function Inventario() {
 
   const handleModalClose = () =>  {
     setIsModalOpen(false);
-    setUri("api/producto");
+    window.location.reload();
   } 
     
 
@@ -234,6 +231,7 @@ export default function Inventario() {
   setIsEditing(false);
   setIsModalOpen(false);
   setSelectedFileName("");
+  window.location.reload();
 };
 
 
