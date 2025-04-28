@@ -196,11 +196,10 @@ export default function Inventario() {
     e.preventDefault();
 
     const { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct;
-
     // Validaciones
     if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
     if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) return alert("Cantidad no válida.");
-    if (!categoria || isNaN(categoria)) return alert("El ID de la categoría no es válido.");
+    if (!categoria.id || isNaN(categoria.id)) return alert("El ID de la categoría no es válido.");
     if (!estado) return alert("El estado es obligatorio.");
     if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime())) return alert("La fecha de creación no es válida.");
 
@@ -210,7 +209,7 @@ export default function Inventario() {
       id_producto: isEditing ? id_producto : null,
       nombre,
       cantidad,
-      id_categoria: categoria,
+      id_categoria: categoria.id,
       estado,
       fecha_creacion: fechaISO,
     };
@@ -257,7 +256,7 @@ export default function Inventario() {
         )
       );
     }
-
+    console.log(productoSinImagen)
     setIsEditing(false);
     setIsModalOpen(false);
     setSelectedFileName("");
