@@ -227,7 +227,7 @@ export default function Tareas() {
   return (
     <>
       <HeaderFuncional
-        botones={["Añadir", "Asignar Usuario", "Calendario"]}
+        botones={["Añadir", "Añadir Categoría", "Asignar Usuario","Calendario"]}
         acciones={{
           Añadir: handleModalOpen,
           "Asignar Usuario": handleModalOpenAsignar,
