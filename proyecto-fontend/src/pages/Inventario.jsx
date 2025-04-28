@@ -456,7 +456,7 @@ export default function Inventario() {
                 <label className="block text-sm font-medium">Categoría</label>
                 <select
                   name="categoria"
-                  value={newProduct.categoria}
+                  value={newProduct.categoria.id}
                   onChange={handleInputChange}
                   className="border p-2 rounded w-full"
                   required
