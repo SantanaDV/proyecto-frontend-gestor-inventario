@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import useApi from "../utilities/apiComunicator";
 import HeaderFuncional from "../components/HeaderFuncional";
 import { useNavigate } from "react-router-dom";
-
+import axios from "axios";
 export default function Inventario() {
   const navigate = useNavigate();
   const { data, loading, error, setUri, setError, setOptions } = useApi("api/producto", {});
@@ -50,7 +50,7 @@ export default function Inventario() {
       const categoriasUnicas = Array.from(
         productosOrdenados
           .map(p => ({
-            id:          p.categoria?.id ?? null,
+            id: p.categoria?.id ?? null,
             descripcion: p.categoria?.descripcion ?? "Sin categoría",
           }))
           .reduce((map, cat) => {
@@ -64,7 +64,7 @@ export default function Inventario() {
           .values()
       );
       setCategorias(categoriasUnicas);
-      
+
       setCategorias(categoriasUnicas);
     } else {
       setError("Los datos no son válidos");
@@ -192,76 +192,95 @@ export default function Inventario() {
     }
   };
 
-  const handleSaveProduct = async (e) => {
-    e.preventDefault();
+ const handleSaveProduct = async (e) => {
+  e.preventDefault();
 
-    const { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct;
-    // Validaciones
-    if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
-    if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) return alert("Cantidad no válida.");
-    if (!categoria.id || isNaN(categoria.id)) return alert("El ID de la categoría no es válido.");
-    if (!estado) return alert("El estado es obligatorio.");
-    if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime())) return alert("La fecha de creación no es válida.");
+  // destructuramos estado actual
+  let { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct;
 
-    const fechaISO = new Date(fecha_creacion).toISOString();
+  // validaciones
+  if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
+  if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) return alert("Cantidad no válida.");
 
-    const productoSinImagen = {
-      id_producto: isEditing ? id_producto : null,
-      nombre,
-      cantidad,
-      id_categoria: categoria.id,
-      estado,
-      fecha_creacion: fechaISO,
-    };
-
-    const formData = new FormData();
-
-    // --- CASO: CREACIÓN ---
-    if (!isEditing) {
-      if (!(url_img instanceof File)) return alert("Debes seleccionar una imagen para crear un nuevo producto.");
-      formData.append("imagen", url_img);
-      formData.append("producto", new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" }));
-
-      setOptions({
-        method: "POST",
-        body: formData,
-      });
-    }
-
-    // --- CASO: EDICIÓN ---
-    else {
-      if (!(url_img instanceof File)) {
-        productoSinImagen.url_img = newProduct.url_img || ""; // Mantener la imagen si no se pasa una nueva
-      } else {
-        formData.append("imagen", url_img);
-      }
-
-      formData.append("producto", new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" }));
-
-      setOptions({
-        method: "PUT",
-        body: formData,
-      });
-    }
-
-    // Una vez que se guarda el producto, actualizar la lista
-    if (!isEditing) {
-      // Producto nuevo
-      setParsedData((prevData) => [...prevData, productoSinImagen]);
-    } else {
-      // Producto actualizado
-      setParsedData((prevData) =>
-        prevData.map((producto) =>
-          producto.id_producto === id_producto ? productoSinImagen : producto
-        )
+  // gestionar categoría nueva vs existente
+  let catSeleccionada = categoria;
+  if (categoria.id === -1) {
+    try {
+      const { data } = await axios.post(
+        "http://localhost:8080/api/categoria",
+        { id: null, descripcion: categoria.descripcion }
       );
+      catSeleccionada = data;
+      // sincronizar state para mostrar el nuevo id
+      setNewProduct(p => ({ ...p, categoria: data }));
+    } catch (err) {
+      console.error(err);
+      return alert("Error al crear la categoría.");
     }
-    console.log(productoSinImagen)
-    setIsEditing(false);
-    setIsModalOpen(false);
-    setSelectedFileName("");
-    window.location.reload();
+  } else if (!categoria.id || isNaN(categoria.id)) {
+    return alert("El ID de la categoría no es válido.");
+  }
+
+  if (!estado) return alert("El estado es obligatorio.");
+  if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime()))
+    return alert("La fecha de creación no es válida.");
+
+  // construimos objeto producto (sin imagen)
+  const fechaISO = new Date(fecha_creacion).toISOString();
+  const productoSinImagen = {
+    id_producto: isEditing ? id_producto : null,
+    nombre,
+    cantidad,
+    id_categoria: catSeleccionada.id,
+    estado,
+    fecha_creacion: fechaISO,
   };
+
+  // preparamos FormData
+  const formData = new FormData();
+  // en edición, si no viene File, mantenemos url_img existente
+  if (isEditing) {
+    if (url_img instanceof File) {
+      formData.append("imagen", url_img);
+    } else if (newProduct.url_img) {
+      // mantenemos la propiedad en el objeto para el PUT
+      productoSinImagen.url_img = newProduct.url_img;
+    }
+  } else {
+    // en creación, obligamos a seleccionar archivo
+    if (!(url_img instanceof File)) {
+      return alert("Debes seleccionar una imagen para crear un nuevo producto.");
+    }
+    formData.append("imagen", url_img);
+  }
+
+  formData.append(
+    "producto",
+    new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" })
+  );
+
+  // enviamos la petición
+  setOptions({
+    method: isEditing ? "PUT" : "POST",
+    body: formData,
+  });
+
+  // actualizamos lista local
+  if (isEditing) {
+    setParsedData(prev =>
+      prev.map(p =>
+        p.id_producto === id_producto ? productoSinImagen : p
+      )
+    );
+  } else {
+    setParsedData(prev => [...prev, productoSinImagen]);
+  }
+
+  // cerramos modal y limpiamos
+  setIsEditing(false);
+  setIsModalOpen(false);
+  setSelectedFileName("");
+};
 
 
 
@@ -315,7 +334,6 @@ export default function Inventario() {
     return newProduct.categoria.descripcion && cat.descripcion.toLowerCase().includes(newProduct.categoria.descripcion.toLowerCase());
   });
 
-  console.log(categoriasFiltradas)
 
   return (
     <>
@@ -504,24 +522,43 @@ export default function Inventario() {
                   />
 
                   {showSuggestions && newProduct.categoria.descripcion && (
-                    <ul className="absolute bg-white border w-full mt-1 max-h-40 overflow-auto z-10">
-                      {categoriasFiltradas.map((cat, index) => (
+                    categoriasFiltradas.length > 0 ? (
+                      <ul className="absolute bg-white border w-full mt-1 max-h-40 overflow-auto z-10">
+                        {categoriasFiltradas.map((cat, index) => (
+                          <li
+                            key={index}
+                            onClick={() => {
+                              setNewProduct((prevState) => ({
+                                ...prevState,
+                                categoria: { descripcion: cat.descripcion, id: cat.id },
+                              }));
+                              setShowSuggestions(false);
+                            }}
+                            className="cursor-pointer px-2 py-1 hover:bg-gray-200"
+                          >
+                            {cat.descripcion + " (ID: " + cat.id + ")"}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <ul className="absolute bg-white border w-full mt-1 max-h-40 overflow-auto z-10">
                         <li
-                          key={index}
                           onClick={() => {
                             setNewProduct((prevState) => ({
                               ...prevState,
-                              categoria: { descripcion: cat.descripcion, id: cat.id },  // Almacenar tanto descripcion como id
+                              categoria: null,    // Aquí ponemos la categoría a null
                             }));
                             setShowSuggestions(false);
                           }}
-                          className="cursor-pointer px-2 py-1 hover:bg-gray-200"
+                          className="cursor-pointer px-2 py-1 text-gree-600 hover:bg-gray-200"
                         >
-                          {cat.descripcion + " (ID: " + cat.id + ")"}
+                         <p className="hidden"> { newProduct.categoria.id = -1}</p>
+                          Se creara una nueva categoría
                         </li>
-                      ))}
-                    </ul>
+                      </ul>
+                    )
                   )}
+
                 </div>
               </div>
 
