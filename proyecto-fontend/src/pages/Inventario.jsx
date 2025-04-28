@@ -286,7 +286,7 @@ export default function Inventario() {
   return (
     <>
       <HeaderFuncional
-        botones={["Añadir","Añadir Categoría"]}
+        botones={["Añadir","Editar Categoría"]}
         acciones={{ Añadir: handleModalOpen }}
       />
   
