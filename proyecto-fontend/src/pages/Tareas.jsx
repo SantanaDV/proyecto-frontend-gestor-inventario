@@ -152,7 +152,6 @@ export default function Tareas() {
         return response.json();
       })
       .then((data) => {
-        console.log("Categoría guardada con éxito", data);
         setIsEditCategoriaOpen(false);
         setIsModalCategoriasOpen(false);
       })
