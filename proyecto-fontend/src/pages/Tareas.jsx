@@ -8,6 +8,7 @@ export default function Tareas() {
     "api/tarea",
     {}
   );
+
   const {
     data: categoriasData,
     loading: loadingCategorias,
@@ -137,14 +138,27 @@ export default function Tareas() {
   };
 
   const handleSaveCategoria = () => {
-    console.log("Guardando categoría:", selectedCategoria);
-    setUriCategorias("api/categoria");
-    setOptions({
+    fetch("http://localhost:8080/api/categoriatarea", {
       method: "PUT",
-      body: selectedCategoria,
-    });
-    setIsEditCategoriaOpen(false);
-    setIsModalCategoriasOpen(false);
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(selectedCategoria), 
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Error en la solicitud");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Categoría guardada con éxito", data);
+        setIsEditCategoriaOpen(false);
+        setIsModalCategoriasOpen(false);
+      })
+      .catch((error) => {
+        console.error("Error al guardar la categoría:", error);
+      });
   };
 
   const handleFilterChange = (e) => {
