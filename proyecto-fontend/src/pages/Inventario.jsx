@@ -19,7 +19,7 @@ export default function Inventario() {
     id_producto: "",
     nombre: "",
     cantidad: 0,
-    categoria: { descripcion: "" }, 
+    categoria: "",
     codigoQr: "",
     estado: "activo",
     url_img: null,
@@ -37,6 +37,8 @@ export default function Inventario() {
     }
   }, [navigate]);
 
+
+
   useEffect(() => {
     if (!data) return;
 
@@ -45,13 +47,24 @@ export default function Inventario() {
         (a, b) => a.nombre?.localeCompare(b.nombre) || 0
       );
       setParsedData(productosOrdenados);
-      const categoriasUnicas = [
-        ...new Set(
-          productosOrdenados.map(
-            (p) => p.categoria?.descripcion || "Sin categoría"
-          )
-        ),
-      ];
+      const categoriasUnicas = Array.from(
+        productosOrdenados
+          .map(p => ({
+            id:          p.categoria?.id ?? null,
+            descripcion: p.categoria?.descripcion ?? "Sin categoría",
+          }))
+          .reduce((map, cat) => {
+            // la clave puede ser cat.id (o cat.descripcion si no hay id)
+            const key = cat.id ?? cat.descripcion;
+            if (!map.has(key)) {
+              map.set(key, cat);
+            }
+            return map;
+          }, new Map())
+          .values()
+      );
+      setCategorias(categoriasUnicas);
+      
       setCategorias(categoriasUnicas);
     } else {
       setError("Los datos no son válidos");
@@ -170,7 +183,7 @@ export default function Inventario() {
         [name]: value,
       }));
     }
-  
+
     // Mostrar sugerencias solo si se está escribiendo algo en la categoría
     if (value.trim() === "") {
       setShowSuggestions(false);
@@ -300,11 +313,10 @@ export default function Inventario() {
     }
   };
   const categoriasFiltradas = categorias.filter((cat) => {
-    return newProduct.categoria.descripcion && cat.toLowerCase().includes(newProduct.categoria.descripcion.toLowerCase());
+    return newProduct.categoria.descripcion && cat.descripcion.toLowerCase().includes(newProduct.categoria.descripcion.toLowerCase());
   });
 
   console.log(categoriasFiltradas)
-  const categoriaExiste = categoriasFiltradas.length > 0;
 
   return (
     <>
@@ -312,7 +324,7 @@ export default function Inventario() {
         botones={["Añadir"]}
         acciones={{ Añadir: handleModalOpen }}
       />
-  
+
       <div className="flex justify-center gap-4 mt-6">
         <select
           value={categoriaFiltro}
@@ -321,12 +333,13 @@ export default function Inventario() {
         >
           <option value="">Todas las categorías</option>
           {categorias.map((cat, index) => (
-            <option key={index} value={cat}>
-              {cat}
+            <option key={index} value={cat.descripcion}>  {/* Acceder solo a descripcion */}
+              {cat.descripcion}  {/* Mostrar solo descripcion */}
             </option>
           ))}
+
         </select>
-  
+
         <input
           type="number"
           placeholder="Cantidad máxima"
@@ -335,7 +348,7 @@ export default function Inventario() {
           className="border p-2 rounded"
         />
       </div>
-  
+
       <div className="grid grid-cols-2 gap-5 mt-5 p-8">
         <div>
           <h2 className="text-2xl font-medium text-center mb-4">Productos Activos</h2>
@@ -374,7 +387,7 @@ export default function Inventario() {
             ))
           )}
         </div>
-  
+
         <div>
           <h2 className="text-2xl font-medium text-center mb-4">Productos Desactivados</h2>
           <div className="mb-4">
@@ -413,7 +426,7 @@ export default function Inventario() {
           )}
         </div>
       </div>
-  
+
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-1/3">
@@ -490,7 +503,7 @@ export default function Inventario() {
                     placeholder="Escribe una categoría"
                     required
                   />
-  
+
                   {showSuggestions && newProduct.categoria.descripcion && (
                     <ul className="absolute bg-white border w-full mt-1 max-h-40 overflow-auto z-10">
                       {categoriasFiltradas.map((cat, index) => (
@@ -499,20 +512,20 @@ export default function Inventario() {
                           onClick={() => {
                             setNewProduct((prevState) => ({
                               ...prevState,
-                              categoria: { descripcion: cat,id: index },
+                              categoria: { descripcion: cat.descripcion, id: cat.id },  // Almacenar tanto descripcion como id
                             }));
                             setShowSuggestions(false);
                           }}
                           className="cursor-pointer px-2 py-1 hover:bg-gray-200"
                         >
-                          {cat+" (ID: " + index + ")"}
+                          {cat.descripcion + " (ID: " + cat.id + ")"}
                         </li>
                       ))}
                     </ul>
                   )}
                 </div>
               </div>
-  
+
               <div className="mb-4">
                 <label className="block text-sm font-medium">Estado</label>
                 <select
@@ -557,5 +570,5 @@ export default function Inventario() {
       )}
     </>
   );
-  
+
 }
