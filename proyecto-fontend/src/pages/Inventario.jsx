@@ -13,17 +13,19 @@ export default function Inventario() {
   const [cantidadFiltro, setCantidadFiltro] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [newProduct, setNewProduct] = useState({
     id_producto: "",
     nombre: "",
     cantidad: 0,
-    categoria: "",
+    categoria: { descripcion: "" }, 
     codigoQr: "",
     estado: "activo",
     url_img: null,
     fecha_creacion: new Date().toISOString().split("T")[0],
   });
+
 
   const [paginaActiva, setPaginaActiva] = useState(1);
   const [paginaDesactivada, setPaginaDesactivada] = useState(1);
@@ -115,11 +117,11 @@ export default function Inventario() {
     );
   };
 
-  const handleModalClose = () =>  {
+  const handleModalClose = () => {
     setIsModalOpen(false);
     window.location.reload();
-  } 
-    
+  }
+
 
   const handleModalOpen = () => {
     const sortedData = [...parsedData].sort(
@@ -157,82 +159,97 @@ export default function Inventario() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewProduct((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-  };
-  const handleSaveProduct = async (e) => {
-  e.preventDefault();
-
-  const { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct;
-
-  // Validaciones
-  if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
-  if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) return alert("Cantidad no válida.");
-  if (!categoria || isNaN(categoria)) return alert("El ID de la categoría no es válido.");
-  if (!estado) return alert("El estado es obligatorio.");
-  if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime())) return alert("La fecha de creación no es válida.");
-
-  const fechaISO = new Date(fecha_creacion).toISOString();
-
-  const productoSinImagen = {
-    id_producto: isEditing ? id_producto : null,
-    nombre,
-    cantidad,
-    id_categoria: categoria,
-    estado,
-    fecha_creacion: fechaISO,
-  };
-
-  const formData = new FormData();
-
-  // --- CASO: CREACIÓN ---
-  if (!isEditing) {
-    if (!(url_img instanceof File)) return alert("Debes seleccionar una imagen para crear un nuevo producto.");
-    formData.append("imagen", url_img);
-    formData.append("producto", new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" }));
-
-    setOptions({
-      method: "POST",
-      body: formData,
-    });
-  }
-
-  // --- CASO: EDICIÓN ---
-  else {
-    if (!(url_img instanceof File)) {
-      productoSinImagen.url_img = newProduct.url_img || ""; // Mantener la imagen si no se pasa una nueva
+    if (name === "categoria") {
+      setNewProduct((prevState) => ({
+        ...prevState,
+        categoria: { ...prevState.categoria, descripcion: value }, // Actualizar solo la descripcion
+      }));
     } else {
+      setNewProduct((prevState) => ({
+        ...prevState,
+        [name]: value,
+      }));
+    }
+  
+    // Mostrar sugerencias solo si se está escribiendo algo en la categoría
+    if (value.trim() === "") {
+      setShowSuggestions(false);
+    } else {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleSaveProduct = async (e) => {
+    e.preventDefault();
+
+    const { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct;
+
+    // Validaciones
+    if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
+    if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) return alert("Cantidad no válida.");
+    if (!categoria || isNaN(categoria)) return alert("El ID de la categoría no es válido.");
+    if (!estado) return alert("El estado es obligatorio.");
+    if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime())) return alert("La fecha de creación no es válida.");
+
+    const fechaISO = new Date(fecha_creacion).toISOString();
+
+    const productoSinImagen = {
+      id_producto: isEditing ? id_producto : null,
+      nombre,
+      cantidad,
+      id_categoria: categoria,
+      estado,
+      fecha_creacion: fechaISO,
+    };
+
+    const formData = new FormData();
+
+    // --- CASO: CREACIÓN ---
+    if (!isEditing) {
+      if (!(url_img instanceof File)) return alert("Debes seleccionar una imagen para crear un nuevo producto.");
       formData.append("imagen", url_img);
+      formData.append("producto", new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" }));
+
+      setOptions({
+        method: "POST",
+        body: formData,
+      });
     }
 
-    formData.append("producto", new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" }));
+    // --- CASO: EDICIÓN ---
+    else {
+      if (!(url_img instanceof File)) {
+        productoSinImagen.url_img = newProduct.url_img || ""; // Mantener la imagen si no se pasa una nueva
+      } else {
+        formData.append("imagen", url_img);
+      }
 
-    setOptions({
-      method: "PUT",
-      body: formData,
-    });
-  }
+      formData.append("producto", new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" }));
 
-  // Una vez que se guarda el producto, actualizar la lista
-  if (!isEditing) {
-    // Producto nuevo
-    setParsedData((prevData) => [...prevData, productoSinImagen]);
-  } else {
-    // Producto actualizado
-    setParsedData((prevData) =>
-      prevData.map((producto) =>
-        producto.id_producto === id_producto ? productoSinImagen : producto
-      )
-    );
-  }
+      setOptions({
+        method: "PUT",
+        body: formData,
+      });
+    }
 
-  setIsEditing(false);
-  setIsModalOpen(false);
-  setSelectedFileName("");
-  window.location.reload();
-};
+    // Una vez que se guarda el producto, actualizar la lista
+    if (!isEditing) {
+      // Producto nuevo
+      setParsedData((prevData) => [...prevData, productoSinImagen]);
+    } else {
+      // Producto actualizado
+      setParsedData((prevData) =>
+        prevData.map((producto) =>
+          producto.id_producto === id_producto ? productoSinImagen : producto
+        )
+      );
+    }
+
+    setIsEditing(false);
+    setIsModalOpen(false);
+    setSelectedFileName("");
+    window.location.reload();
+  };
 
 
 
@@ -254,12 +271,12 @@ export default function Inventario() {
     const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
     if (confirmDelete) {
       const token = localStorage.getItem("authToken");  // Obtener el token del localStorage
-  
+
       if (!token) {
         alert("No tienes permiso para eliminar el producto. No se encontró el token.");
         return;
       }
-  
+
       // Hacer la solicitud DELETE al backend con el token
       fetch(`http://localhost:8080/api/producto/${id_producto}`, {  // Ahora usas id_producto
         method: "DELETE",
@@ -282,11 +299,17 @@ export default function Inventario() {
         });
     }
   };
+  const categoriasFiltradas = categorias.filter((cat) => {
+    return newProduct.categoria.descripcion && cat.toLowerCase().includes(newProduct.categoria.descripcion.toLowerCase());
+  });
+
+  console.log(categoriasFiltradas)
+  const categoriaExiste = categoriasFiltradas.length > 0;
 
   return (
     <>
       <HeaderFuncional
-        botones={["Añadir","Editar Categoría"]}
+        botones={["Añadir"]}
         acciones={{ Añadir: handleModalOpen }}
       />
   
@@ -454,21 +477,42 @@ export default function Inventario() {
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium">Categoría</label>
-                <select
-                  name="categoria"
-                  value={newProduct.categoria.id}
-                  onChange={handleInputChange}
-                  className="border p-2 rounded w-full"
-                  required
-                >
-                  <option value="">Selecciona una categoría</option>
-                  {dataCategoria.map((cat, idx) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.descripcion}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="categoria"
+                    value={newProduct.categoria.descripcion || ""}
+                    id={newProduct.categoria.id}
+                    onChange={handleInputChange}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
+                    className="border p-2 rounded w-full"
+                    placeholder="Escribe una categoría"
+                    required
+                  />
+  
+                  {showSuggestions && newProduct.categoria.descripcion && (
+                    <ul className="absolute bg-white border w-full mt-1 max-h-40 overflow-auto z-10">
+                      {categoriasFiltradas.map((cat, index) => (
+                        <li
+                          key={index}
+                          onClick={() => {
+                            setNewProduct((prevState) => ({
+                              ...prevState,
+                              categoria: { descripcion: cat,id: index },
+                            }));
+                            setShowSuggestions(false);
+                          }}
+                          className="cursor-pointer px-2 py-1 hover:bg-gray-200"
+                        >
+                          {cat+" (ID: " + index + ")"}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
+  
               <div className="mb-4">
                 <label className="block text-sm font-medium">Estado</label>
                 <select
@@ -512,5 +556,6 @@ export default function Inventario() {
         </div>
       )}
     </>
-  );  
+  );
+  
 }
