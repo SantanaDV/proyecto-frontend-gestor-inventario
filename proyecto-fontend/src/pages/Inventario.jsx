@@ -15,6 +15,7 @@ export default function Inventario() {
   const [isEditing, setIsEditing] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
+  
   const [newProduct, setNewProduct] = useState({
     id_producto: "",
     nombre: "",
@@ -334,12 +335,55 @@ export default function Inventario() {
     return newProduct.categoria.descripcion && cat.descripcion.toLowerCase().includes(newProduct.categoria.descripcion.toLowerCase());
   });
 
+  const [isModalCategoriasOpen, setIsModalCategoriasOpen] = useState(false);
+  const [isEditCategoriaOpen, setIsEditCategoriaOpen] = useState(false);
+  const [selectedCategoria, setSelectedCategoria] = useState(null);
+  
+  const handleModalOpenCategorias = () => {
+    setIsModalCategoriasOpen(true);
+  };
+
+  const handleCategoriaInputChange = (e) => {
+    const { name, value } = e.target;
+    setSelectedCategoria((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCategoriaSeleccionada = (categoria) => {
+    setSelectedCategoria({ ...categoria });
+    setIsEditCategoriaOpen(true);
+  };
+
+  const handleSaveCategoria = () => {
+    fetch("http://localhost:8080/api/categoria", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(selectedCategoria), 
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Error en la solicitud");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setIsEditCategoriaOpen(false);
+        setIsModalCategoriasOpen(false);
+      })
+      .catch((error) => {
+        console.error("Error al guardar la categoría:", error);
+      });
+  };
 
   return (
     <>
       <HeaderFuncional
-        botones={["Añadir"]}
-        acciones={{ Añadir: handleModalOpen }}
+        botones={["Añadir", "Editar Categoría"]}
+        acciones={{ 
+          Añadir: handleModalOpen, 
+          "Editar Categoría": handleModalOpenCategorias ,
+        }}
       />
 
       <div className="flex justify-center gap-4 mt-6">
@@ -443,6 +487,83 @@ export default function Inventario() {
           )}
         </div>
       </div>
+
+      {/*Modal de Listar y Editar Categoria */}
+      {isModalCategoriasOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg w-1/3">
+              <h3 className="text-2xl mb-4 text-center">Editar Categorías</h3>
+              <ul className="mb-4">
+                {categorias.map((categoria) => (
+                  <li
+                    key={categoria.id}
+                    className="flex justify-between items-center mb-2"
+                  >
+                    <p>{categoria.descripcion}</p>
+                    <button
+                      onClick={() => handleCategoriaSeleccionada(categoria)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded"
+                    >
+                      Editar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setIsModalCategoriasOpen(false)}
+                  className="bg-red-300 text-black px-4 py-2 rounded"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isEditCategoriaOpen && selectedCategoria && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg w-1/3">
+              <h3 className="text-2xl mb-4 text-center">Editar Categoría</h3>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">ID</label>
+                <input
+                  type="text"
+                  name="id"
+                  value={selectedCategoria.id}
+                  readOnly
+                  className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium">Descripción</label>
+                <input
+                  type="text"
+                  name="descripcion"
+                  value={selectedCategoria.descripcion}
+                  onChange={handleCategoriaInputChange}
+                  className="border p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="flex justify-between">
+                <button
+                  onClick={() => setIsEditCategoriaOpen(false)}
+                  className="bg-red-300 text-black px-4 py-2 rounded"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveCategoria}
+                  className="bg-red-500 text-white px-4 py-2 rounded"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
