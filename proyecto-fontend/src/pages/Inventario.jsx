@@ -5,8 +5,18 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 export default function Inventario() {
   const navigate = useNavigate();
-  const { data, loading, error, setUri, setError, setOptions } = useApi("api/producto", {});
-  const { data: dataCategoria, loading: loadingCategoria, error: errorCategoria, setUri: uriCategoria, setError: setErrorCate, setOptions: setOptionsCate } = useApi("api/categoria", {});
+  const { data, loading, error, setUri, setError, setOptions } = useApi(
+    "api/producto",
+    {}
+  );
+  const {
+    data: dataCategoria,
+    loading: loadingCategoria,
+    error: errorCategoria,
+    setUri: uriCategoria,
+    setError: setErrorCate,
+    setOptions: setOptionsCate,
+  } = useApi("api/categoria", {});
   const [parsedData, setParsedData] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
@@ -15,7 +25,7 @@ export default function Inventario() {
   const [isEditing, setIsEditing] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
-  
+
   const [newProduct, setNewProduct] = useState({
     id_producto: "",
     nombre: "",
@@ -27,18 +37,15 @@ export default function Inventario() {
     fecha_creacion: new Date().toISOString().split("T")[0],
   });
 
-
   const [paginaActiva, setPaginaActiva] = useState(1);
   const [paginaDesactivada, setPaginaDesactivada] = useState(1);
   const productosPorPagina = 3;
 
   useEffect(() => {
     if (!localStorage.getItem("authToken")) {
-      navigate('/');
+      navigate("/");
     }
   }, [navigate]);
-
-
 
   useEffect(() => {
     if (!data) return;
@@ -48,30 +55,18 @@ export default function Inventario() {
         (a, b) => a.nombre?.localeCompare(b.nombre) || 0
       );
       setParsedData(productosOrdenados);
-      const categoriasUnicas = Array.from(
-        productosOrdenados
-          .map(p => ({
-            id: p.categoria?.id ?? null,
-            descripcion: p.categoria?.descripcion ?? "Sin categoría",
-          }))
-          .reduce((map, cat) => {
-            // la clave puede ser cat.id (o cat.descripcion si no hay id)
-            const key = cat.id ?? cat.descripcion;
-            if (!map.has(key)) {
-              map.set(key, cat);
-            }
-            return map;
-          }, new Map())
-          .values()
-      );
-      setCategorias(categoriasUnicas);
-
-      setCategorias(categoriasUnicas);
     } else {
       setError("Los datos no son válidos");
       setParsedData([]);
     }
   }, [data, setError]);
+
+  // Cargar todas las categorías directamente desde el endpoint
+  useEffect(() => {
+    if (Array.isArray(dataCategoria)) {
+      setCategorias(dataCategoria);
+    }
+  }, [dataCategoria]);
 
   const productosFiltrados = parsedData.filter((producto) => {
     const categoriaValida = producto.categoria?.descripcion || "Sin categoría";
@@ -82,8 +77,12 @@ export default function Inventario() {
     );
   });
 
-  const productosActivos = productosFiltrados.filter((p) => p.estado === "activo");
-  const productosDesactivados = productosFiltrados.filter((p) => p.estado === "desactivado");
+  const productosActivos = productosFiltrados.filter(
+    (p) => p.estado === "activo"
+  );
+  const productosDesactivados = productosFiltrados.filter(
+    (p) => p.estado === "desactivado"
+  );
 
   const indiceInicioActivos = (paginaActiva - 1) * productosPorPagina;
   const productosActivosPaginados = productosActivos.slice(
@@ -114,8 +113,9 @@ export default function Inventario() {
           <button
             key={i}
             onClick={() => setActual(i + 1)}
-            className={`px-3 py-1 rounded border ${actual === i + 1 ? "bg-gray-600 text-white" : "bg-white"
-              }`}
+            className={`px-3 py-1 rounded border ${
+              actual === i + 1 ? "bg-gray-600 text-white" : "bg-white"
+            }`}
           >
             {i + 1}
           </button>
@@ -134,8 +134,7 @@ export default function Inventario() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     window.location.reload();
-  }
-
+  };
 
   const handleModalOpen = () => {
     const sortedData = [...parsedData].sort(
@@ -193,101 +192,110 @@ export default function Inventario() {
     }
   };
 
- const handleSaveProduct = async (e) => {
-  e.preventDefault();
+  const handleSaveProduct = async (e) => {
+    e.preventDefault();
 
-  // destructuramos estado actual
-  let { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct;
+    // destructuramos estado actual
+    let {
+      nombre,
+      cantidad,
+      categoria,
+      url_img,
+      estado,
+      fecha_creacion,
+      id_producto,
+    } = newProduct;
 
-  // validaciones
-  if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
-  if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) return alert("Cantidad no válida.");
+    // validaciones
+    if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
+    if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0)
+      return alert("Cantidad no válida.");
 
-  // gestionar categoría nueva vs existente
-  let catSeleccionada = categoria;
-  if (categoria.id === -1) {
-    try {
-      const { data } = await axios.post(
-        "http://localhost:8080/api/categoria",
-        { id: null, descripcion: categoria.descripcion }
-      );
-      catSeleccionada = data;
-      // sincronizar state para mostrar el nuevo id
-      setNewProduct(p => ({ ...p, categoria: data }));
-    } catch (err) {
-      console.error(err);
-      return alert("Error al crear la categoría.");
+    // gestionar categoría nueva vs existente
+    let catSeleccionada = categoria;
+    if (categoria.id === -1) {
+      try {
+        const { data } = await axios.post(
+          "http://localhost:8080/api/categoria",
+          { id: null, descripcion: categoria.descripcion }
+        );
+        catSeleccionada = data;
+        // sincronizar state para mostrar el nuevo id
+        setNewProduct((p) => ({ ...p, categoria: data }));
+      } catch (err) {
+        console.error(err);
+        return alert("Error al crear la categoría.");
+      }
+    } else if (!categoria.id || isNaN(categoria.id)) {
+      return alert("El ID de la categoría no es válido.");
     }
-  } else if (!categoria.id || isNaN(categoria.id)) {
-    return alert("El ID de la categoría no es válido.");
-  }
 
-  if (!estado) return alert("El estado es obligatorio.");
-  if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime()))
-    return alert("La fecha de creación no es válida.");
+    if (!estado) return alert("El estado es obligatorio.");
+    if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime()))
+      return alert("La fecha de creación no es válida.");
 
-  // construimos objeto producto (sin imagen)
-  const fechaISO = new Date(fecha_creacion).toISOString();
-  const productoSinImagen = {
-    id_producto: isEditing ? id_producto : null,
-    nombre,
-    cantidad,
-    id_categoria: catSeleccionada.id,
-    estado,
-    fecha_creacion: fechaISO,
-  };
+    // construimos objeto producto (sin imagen)
+    const fechaISO = new Date(fecha_creacion).toISOString();
+    const productoSinImagen = {
+      id_producto: isEditing ? id_producto : null,
+      nombre,
+      cantidad,
+      id_categoria: catSeleccionada.id,
+      estado,
+      fecha_creacion: fechaISO,
+    };
 
-  // preparamos FormData
-  const formData = new FormData();
-  // en edición, si no viene File, mantenemos url_img existente
-  if (isEditing) {
-    if (url_img instanceof File) {
+    // preparamos FormData
+    const formData = new FormData();
+    // en edición, si no viene File, mantenemos url_img existente
+    if (isEditing) {
+      if (url_img instanceof File) {
+        formData.append("imagen", url_img);
+      } else if (newProduct.url_img) {
+        // mantenemos la propiedad en el objeto para el PUT
+        productoSinImagen.url_img = newProduct.url_img;
+      }
+    } else {
+      // en creación, obligamos a seleccionar archivo
+      if (!(url_img instanceof File)) {
+        return alert(
+          "Debes seleccionar una imagen para crear un nuevo producto."
+        );
+      }
       formData.append("imagen", url_img);
-    } else if (newProduct.url_img) {
-      // mantenemos la propiedad en el objeto para el PUT
-      productoSinImagen.url_img = newProduct.url_img;
     }
-  } else {
-    // en creación, obligamos a seleccionar archivo
-    if (!(url_img instanceof File)) {
-      return alert("Debes seleccionar una imagen para crear un nuevo producto.");
-    }
-    formData.append("imagen", url_img);
-  }
 
-  formData.append(
-    "producto",
-    new Blob([JSON.stringify(productoSinImagen)], { type: "application/json" })
-  );
-
-  // enviamos la petición
-  setOptions({
-    method: isEditing ? "PUT" : "POST",
-    body: formData,
-  });
-
-  // actualizamos lista local
-  if (isEditing) {
-    setParsedData(prev =>
-      prev.map(p =>
-        p.id_producto === id_producto ? productoSinImagen : p
-      )
+    formData.append(
+      "producto",
+      new Blob([JSON.stringify(productoSinImagen)], {
+        type: "application/json",
+      })
     );
-  } else {
-    setParsedData(prev => [...prev, productoSinImagen]);
-  }
 
-  // cerramos modal y limpiamos
-  setIsEditing(false);
-  setIsModalOpen(false);
-  setSelectedFileName("");
-};
+    // enviamos la petición
+    setOptions({
+      method: isEditing ? "PUT" : "POST",
+      body: formData,
+    });
 
+    // actualizamos lista local
+    if (isEditing) {
+      setParsedData((prev) =>
+        prev.map((p) => (p.id_producto === id_producto ? productoSinImagen : p))
+      );
+    } else {
+      setParsedData((prev) => [...prev, productoSinImagen]);
+    }
 
+    // cerramos modal y limpiamos
+    setIsEditing(false);
+    setIsModalOpen(false);
+    setSelectedFileName("");
+  };
 
   const handleEditProduct = (producto) => {
     // Formatear la fecha para que no tenga la parte de la hora
-    const fechaSinHora = producto.fecha_creacion.split("T")[0];  // Esto deja solo la fecha
+    const fechaSinHora = producto.fecha_creacion.split("T")[0]; // Esto deja solo la fecha
 
     setNewProduct({
       ...producto,
@@ -300,26 +308,35 @@ export default function Inventario() {
   };
 
   const handleDeleteProduct = (id_producto) => {
-    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
+    const confirmDelete = window.confirm(
+      "¿Estás seguro de que deseas eliminar este producto?"
+    );
     if (confirmDelete) {
-      const token = localStorage.getItem("authToken");  // Obtener el token del localStorage
+      const token = localStorage.getItem("authToken"); // Obtener el token del localStorage
 
       if (!token) {
-        alert("No tienes permiso para eliminar el producto. No se encontró el token.");
+        alert(
+          "No tienes permiso para eliminar el producto. No se encontró el token."
+        );
         return;
       }
 
       // Hacer la solicitud DELETE al backend con el token
-      fetch(`http://localhost:8080/api/producto/${id_producto}`, {  // Ahora usas id_producto
+      fetch(`http://localhost:8080/api/producto/${id_producto}`, {
+        // Ahora usas id_producto
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`,  // Añadir el token en los headers
+          Authorization: `Bearer ${token}`, // Añadir el token en los headers
         },
       })
         .then((response) => {
           if (response.ok) {
             // Si la respuesta es exitosa, eliminar el producto de la lista local
-            setParsedData((prevData) => prevData.filter((producto) => producto.id_producto !== id_producto)); // Filtras por id_producto
+            setParsedData((prevData) =>
+              prevData.filter(
+                (producto) => producto.id_producto !== id_producto
+              )
+            ); // Filtras por id_producto
             alert("Producto eliminado con éxito");
           } else {
             alert("Error al eliminar el producto");
@@ -332,13 +349,18 @@ export default function Inventario() {
     }
   };
   const categoriasFiltradas = categorias.filter((cat) => {
-    return newProduct.categoria.descripcion && cat.descripcion.toLowerCase().includes(newProduct.categoria.descripcion.toLowerCase());
+    return (
+      newProduct.categoria.descripcion &&
+      cat.descripcion
+        .toLowerCase()
+        .includes(newProduct.categoria.descripcion.toLowerCase())
+    );
   });
 
   const [isModalCategoriasOpen, setIsModalCategoriasOpen] = useState(false);
   const [isEditCategoriaOpen, setIsEditCategoriaOpen] = useState(false);
   const [selectedCategoria, setSelectedCategoria] = useState(null);
-  
+
   const handleModalOpenCategorias = () => {
     setIsModalCategoriasOpen(true);
   };
@@ -359,7 +381,7 @@ export default function Inventario() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(selectedCategoria), 
+      body: JSON.stringify(selectedCategoria),
     })
       .then((response) => {
         if (!response.ok) {
@@ -380,9 +402,9 @@ export default function Inventario() {
     <>
       <HeaderFuncional
         botones={["Añadir", "Editar Categoría"]}
-        acciones={{ 
-          Añadir: handleModalOpen, 
-          "Editar Categoría": handleModalOpenCategorias ,
+        acciones={{
+          Añadir: handleModalOpen,
+          "Editar Categoría": handleModalOpenCategorias,
         }}
       />
 
@@ -394,11 +416,12 @@ export default function Inventario() {
         >
           <option value="">Todas las categorías</option>
           {categorias.map((cat, index) => (
-            <option key={index} value={cat.descripcion}>  {/* Acceder solo a descripcion */}
-              {cat.descripcion}  {/* Mostrar solo descripcion */}
+            <option key={index} value={cat.descripcion}>
+              {" "}
+              {/* Acceder solo a descripcion */}
+              {cat.descripcion} {/* Mostrar solo descripcion */}
             </option>
           ))}
-
         </select>
 
         <input
@@ -412,9 +435,15 @@ export default function Inventario() {
 
       <div className="grid grid-cols-2 gap-5 mt-5 p-8">
         <div>
-          <h2 className="text-2xl font-medium text-center mb-4">Productos Activos</h2>
+          <h2 className="text-2xl font-medium text-center mb-4">
+            Productos Activos
+          </h2>
           <div className="mb-4">
-            <Paginacion total={productosActivos.length} actual={paginaActiva} setActual={setPaginaActiva} />
+            <Paginacion
+              total={productosActivos.length}
+              actual={paginaActiva}
+              setActual={setPaginaActiva}
+            />
           </div>
           {productosActivosPaginados.length === 0 ? (
             <p>No hay productos activos.</p>
@@ -425,13 +454,21 @@ export default function Inventario() {
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-green-50 p-4 mb-4 flex flex-col items-center"
               >
                 <div className="flex w-full justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-700">{producto.nombre}</h3>
+                  <h3 className="text-lg font-semibold text-gray-700">
+                    {producto.nombre}
+                  </h3>
                   <div className="flex gap-2">
                     <button onClick={() => handleEditProduct(producto)}>
                       <img className="w-6 h-6" src="editar.png" alt="Editar" />
                     </button>
-                    <button onClick={() => handleDeleteProduct(producto.id_producto)}>
-                      <img className="w-6 h-6" src="eliminar.png" alt="Eliminar" />
+                    <button
+                      onClick={() => handleDeleteProduct(producto.id_producto)}
+                    >
+                      <img
+                        className="w-6 h-6"
+                        src="eliminar.png"
+                        alt="Eliminar"
+                      />
                     </button>
                   </div>
                 </div>
@@ -441,18 +478,31 @@ export default function Inventario() {
                   onClick={() => handleEditProduct(producto)}
                   className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
                 />
-                <p><strong>Cantidad:</strong> {producto.cantidad}</p>
-                <p><strong>Categoría:</strong> {producto.categoria?.descripcion || "Sin categoría"}</p>
-                <p><strong>QR:</strong> {producto.codigoQr}</p>
+                <p>
+                  <strong>Cantidad:</strong> {producto.cantidad}
+                </p>
+                <p>
+                  <strong>Categoría:</strong>{" "}
+                  {producto.categoria?.descripcion || "Sin categoría"}
+                </p>
+                <p>
+                  <strong>QR:</strong> {producto.codigoQr}
+                </p>
               </div>
             ))
           )}
         </div>
 
         <div>
-          <h2 className="text-2xl font-medium text-center mb-4">Productos Desactivados</h2>
+          <h2 className="text-2xl font-medium text-center mb-4">
+            Productos Desactivados
+          </h2>
           <div className="mb-4">
-            <Paginacion total={productosDesactivados.length} actual={paginaDesactivada} setActual={setPaginaDesactivada} />
+            <Paginacion
+              total={productosDesactivados.length}
+              actual={paginaDesactivada}
+              setActual={setPaginaDesactivada}
+            />
           </div>
           {productosDesactivadosPaginados.length === 0 ? (
             <p>No hay productos desactivados.</p>
@@ -463,13 +513,21 @@ export default function Inventario() {
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-red-50 p-4 mb-4 flex flex-col items-center"
               >
                 <div className="flex w-full justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-700">{producto.nombre}</h3>
+                  <h3 className="text-lg font-semibold text-gray-700">
+                    {producto.nombre}
+                  </h3>
                   <div className="flex gap-2">
                     <button onClick={() => handleEditProduct(producto)}>
                       <img className="w-6 h-6" src="editar.png" alt="Editar" />
                     </button>
-                    <button onClick={() => handleDeleteProduct(producto.id_producto)}>
-                      <img className="w-6 h-6" src="eliminar.png" alt="Eliminar" />
+                    <button
+                      onClick={() => handleDeleteProduct(producto.id_producto)}
+                    >
+                      <img
+                        className="w-6 h-6"
+                        src="eliminar.png"
+                        alt="Eliminar"
+                      />
                     </button>
                   </div>
                 </div>
@@ -479,91 +537,99 @@ export default function Inventario() {
                   onClick={() => handleEditProduct(producto)}
                   className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
                 />
-                <p><strong>Cantidad:</strong> {producto.cantidad}</p>
-                <p><strong>Categoría:</strong> {producto.categoria?.descripcion || "Sin categoría"}</p>
-                <p><strong>QR:</strong> {producto.codigoQr}</p>
+                <p>
+                  <strong>Cantidad:</strong> {producto.cantidad}
+                </p>
+                <p>
+                  <strong>Categoría:</strong>{" "}
+                  {producto.categoria?.descripcion || "Sin categoría"}
+                </p>
+                <p>
+                  <strong>QR:</strong> {producto.codigoQr}
+                </p>
               </div>
             ))
           )}
         </div>
       </div>
 
-      {/*Modal de Listar y Editar Categoria */}
+      {/* Modal de Listar y Editar Categoria */}
       {isModalCategoriasOpen && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg w-1/3">
-              <h3 className="text-2xl mb-4 text-center">Editar Categorías</h3>
-              <ul className="mb-4">
-                {categorias.map((categoria) => (
-                  <li
-                    key={categoria.id}
-                    className="flex justify-between items-center mb-2"
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-1/3">
+            <h3 className="text-2xl mb-4 text-center">Editar Categorías</h3>
+            <ul className="mb-4 max-h-80 overflow-y-auto pr-2">
+              {" "}
+              {/* Aumento de altura */}
+              {categorias.map((categoria) => (
+                <li
+                  key={categoria.id}
+                  className="flex justify-between items-center mb-2"
+                >
+                  <p>{categoria.descripcion}</p>
+                  <button
+                    onClick={() => handleCategoriaSeleccionada(categoria)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded"
                   >
-                    <p>{categoria.descripcion}</p>
-                    <button
-                      onClick={() => handleCategoriaSeleccionada(categoria)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded"
-                    >
-                      Editar
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex justify-center">
-                <button
-                  onClick={() => setIsModalCategoriasOpen(false)}
-                  className="bg-red-300 text-black px-4 py-2 rounded"
-                >
-                  Cerrar
-                </button>
-              </div>
+                    Editar
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setIsModalCategoriasOpen(false)}
+                className="bg-red-300 text-black px-4 py-2 rounded"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {isEditCategoriaOpen && selectedCategoria && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg w-1/3">
-              <h3 className="text-2xl mb-4 text-center">Editar Categoría</h3>
-              <div className="mb-4">
-                <label className="block text-sm font-medium">ID</label>
-                <input
-                  type="text"
-                  name="id"
-                  value={selectedCategoria.id}
-                  readOnly
-                  className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium">Descripción</label>
-                <input
-                  type="text"
-                  name="descripcion"
-                  value={selectedCategoria.descripcion}
-                  onChange={handleCategoriaInputChange}
-                  className="border p-2 rounded w-full"
-                  required
-                />
-              </div>
-              <div className="flex justify-between">
-                <button
-                  onClick={() => setIsEditCategoriaOpen(false)}
-                  className="bg-red-300 text-black px-4 py-2 rounded"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveCategoria}
-                  className="bg-red-500 text-white px-4 py-2 rounded"
-                >
-                  Guardar Cambios
-                </button>
-              </div>
+      {isEditCategoriaOpen && selectedCategoria && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-1/3">
+            <h3 className="text-2xl mb-4 text-center">Editar Categoría</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium">ID</label>
+              <input
+                type="text"
+                name="id"
+                value={selectedCategoria.id}
+                readOnly
+                className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium">Descripción</label>
+              <input
+                type="text"
+                name="descripcion"
+                value={selectedCategoria.descripcion}
+                onChange={handleCategoriaInputChange}
+                className="border p-2 rounded w-full"
+                required
+              />
+            </div>
+            <div className="flex justify-between">
+              <button
+                onClick={() => setIsEditCategoriaOpen(false)}
+                className="bg-red-300 text-black px-4 py-2 rounded"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveCategoria}
+                className="bg-red-500 text-white px-4 py-2 rounded"
+              >
+                Guardar Cambios
+              </button>
             </div>
           </div>
-        )}
-
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
@@ -636,14 +702,17 @@ export default function Inventario() {
                     id={newProduct.categoria.id}
                     onChange={handleInputChange}
                     onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
+                    onBlur={() =>
+                      setTimeout(() => setShowSuggestions(false), 100)
+                    }
                     className="border p-2 rounded w-full"
                     placeholder="Escribe una categoría"
                     required
                   />
 
-                  {showSuggestions && newProduct.categoria.descripcion && (
-                    categoriasFiltradas.length > 0 ? (
+                  {showSuggestions &&
+                    newProduct.categoria.descripcion &&
+                    (categoriasFiltradas.length > 0 ? (
                       <ul className="absolute bg-white border w-full mt-1 max-h-40 overflow-auto z-10">
                         {categoriasFiltradas.map((cat, index) => (
                           <li
@@ -651,7 +720,10 @@ export default function Inventario() {
                             onClick={() => {
                               setNewProduct((prevState) => ({
                                 ...prevState,
-                                categoria: { descripcion: cat.descripcion, id: cat.id },
+                                categoria: {
+                                  descripcion: cat.descripcion,
+                                  id: cat.id,
+                                },
                               }));
                               setShowSuggestions(false);
                             }}
@@ -667,19 +739,20 @@ export default function Inventario() {
                           onClick={() => {
                             setNewProduct((prevState) => ({
                               ...prevState,
-                              categoria: null,    // Aquí ponemos la categoría a null
+                              categoria: null, // Aquí ponemos la categoría a null
                             }));
                             setShowSuggestions(false);
                           }}
                           className="cursor-pointer px-2 py-1 text-gree-600 hover:bg-gray-200"
                         >
-                         <p className="hidden"> { newProduct.categoria.id = -1}</p>
+                          <p className="hidden">
+                            {" "}
+                            {(newProduct.categoria.id = -1)}
+                          </p>
                           Se creara una nueva categoría
                         </li>
                       </ul>
-                    )
-                  )}
-
+                    ))}
                 </div>
               </div>
 
@@ -697,7 +770,9 @@ export default function Inventario() {
                 </select>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium">Fecha de Creación</label>
+                <label className="block text-sm font-medium">
+                  Fecha de Creación
+                </label>
                 <input
                   type="date"
                   name="fecha_creacion"
@@ -727,5 +802,4 @@ export default function Inventario() {
       )}
     </>
   );
-
 }
