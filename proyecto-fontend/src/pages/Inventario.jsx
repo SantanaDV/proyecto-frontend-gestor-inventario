@@ -98,7 +98,7 @@ export default function Inventario() {
 
   const Paginacion = ({ total, actual, setActual }) => {
     const totalPaginas = Math.ceil(total / productosPorPagina);
-    if (totalPaginas <= 1) return null;
+    if (totalPaginas <= 1) return (<div className="flex justify-center items-center mt-12 gap-2 flex-wrap"></div>);
 
     return (
       <div className="flex justify-center items-center mt-4 gap-2 flex-wrap">
