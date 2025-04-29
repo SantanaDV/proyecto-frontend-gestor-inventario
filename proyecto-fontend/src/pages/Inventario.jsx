@@ -736,13 +736,7 @@ export default function Inventario() {
                     ) : (
                       <ul className="absolute bg-white border w-full mt-1 max-h-40 overflow-auto z-10">
                         <li
-                          onClick={() => {
-                            setNewProduct((prevState) => ({
-                              ...prevState,
-                              categoria: null, // Aquí ponemos la categoría a null
-                            }));
-                            setShowSuggestions(false);
-                          }}
+                          onClick={() => {setShowSuggestions(false);}}
                           className="cursor-pointer px-2 py-1 text-gree-600 hover:bg-gray-200"
                         >
                           <p className="hidden">
