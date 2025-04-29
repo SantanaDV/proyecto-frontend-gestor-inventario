@@ -153,9 +153,6 @@ export default function Calendar() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white h-10" onClick={() => setIsAddEventOpen(true)}>
-            Add event
-          </Button>
         </div>
       </div>
 
@@ -175,7 +172,7 @@ export default function Calendar() {
           return (
             <div key={index} className={`border-b border-r p-1 relative ${!day.isCurrentMonth ? "text-gray-400" : ""}`}>
               <div className="flex flex-col h-full">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between" >
                   <span
                     className={`p-2 mx-6 ${isTodayDay ? "bg-indigo-600 text-white rounded-full" : ""}`}
                   >
