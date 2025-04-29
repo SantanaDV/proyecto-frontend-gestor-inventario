@@ -8,7 +8,9 @@ export default function Tareas() {
     "api/tarea",
     {}
   );
-
+  const [categoriaInput, setCategoriaInput] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [categoriasFiltradas, setCategoriasFiltradas] = useState([]);
   const {
     data: categoriasData,
     loading: loadingCategorias,
@@ -132,18 +134,49 @@ export default function Tareas() {
     setIsEditCategoriaOpen(true);
   };
 
-  const handleCategoriaInputChange = (e) => {
-    const { name, value } = e.target;
-    setSelectedCategoria((prev) => ({ ...prev, [name]: value }));
+
+  const filteredCategorias = categorias.filter(c =>
+    c.descripcion.toLowerCase().includes(categoriaInput.toLowerCase())
+  );
+
+  // Maneja cambios en el input: actualiza texto y resetea la categoría seleccionada
+  const handleCategoriaInputChange = (event) => {
+    const value = event.target.value;
+    setCategoriaInput(value);
+    // Al cambiar el texto, eliminamos la categoría seleccionada previa
+    setNewTask(prev => ({ ...prev,id_categoria: "" }));
+    setShowSuggestions(true);
   };
 
-  const handleSaveCategoria = () => {
+  // Cuando el usuario selecciona una categoría de la lista
+  const handleCategoriaSelect = (categoriaObj) => {
+    setNewTask(prev => ({
+      ...prev,
+      id_categoria: categoriaObj.id, // Establecemos el id de la categoría seleccionada
+    }));
+    setCategoriaInput(categoriaObj.descripcion);
+    setShowSuggestions(false);
+  };
+
+  // Cuando el usuario opta por crear una nueva categoría
+  const handleCrearNuevaCategoria = () => {
+    // Verificamos que el input no esté vacío antes de hacer la solicitud
+    if (!categoriaInput.trim()) {
+      alert("Por favor, ingresa una descripción válida para la categoría.");
+      return;
+    }
+  
+    const nuevaCategoria = {
+      descripcion: categoriaInput,  // Se usa el texto ingresado en el input
+    };
+  
+    // Hacemos la solicitud POST a la API
     fetch("http://localhost:8080/api/categoriatarea", {
-      method: "PUT",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(selectedCategoria), 
+      body: JSON.stringify(nuevaCategoria),
     })
       .then((response) => {
         if (!response.ok) {
@@ -152,12 +185,26 @@ export default function Tareas() {
         return response.json();
       })
       .then((data) => {
-        setIsEditCategoriaOpen(false);
-        setIsModalCategoriasOpen(false);
+        // Si la creación es exitosa, actualizamos el estado
+        // Aquí actualizamos el id_categoria en lugar de newTask.categoria
+        setNewTask((prev) => ({
+          ...prev,
+          id_categoria: data.id,  // Establecemos el id de la categoría
+        }));
+        console.log("Categoría creada:", data);
+        console.log("Esto son los datos de la nueva tarea: ",newTask);
+        setShowSuggestions(false);  // Ocultamos las sugerencias
       })
       .catch((error) => {
-        console.error("Error al guardar la categoría:", error);
+        console.error("Error al crear la categoría:", error);
       });
+  
+    // Aquí seguimos con el comportamiento original
+    setShowSuggestions(false);
+  };
+  
+  const handleSaveCategoria = () => {
+
   };
 
   const handleFilterChange = (e) => {
@@ -201,15 +248,25 @@ export default function Tareas() {
   };
 
   const handleSaveTask = () => {
-    console.log(
-      isEditing ? "Actualizando tarea:" : "Guardando nueva tarea:",
-      newTask
-    );
-    setUri("api/tarea");
-    setOptions({
+    if(!isEditing)newTask.id = null;
+    fetch("http://localhost:8080/api/tarea", {
       method: "POST",
-      body: newTask,
-    });
+      headers: {"Content-Type": "application/json", },
+      body: JSON.stringify(newTask),
+    })
+      .then((response) => {
+        console.log(response)
+        if (!response.ok) {
+          throw new Error("Error en la solicitud");
+        }
+        return response.json();
+      })
+      .then((data) => {
+       console.log(data)
+      })
+      .catch((error) => {
+        console.error("Error al crear la categoría:", error);
+      });
     setIsModalOpen(false);
     setIsEditing(false);
   };
@@ -315,6 +372,37 @@ export default function Tareas() {
                 />
               </div>
               <div className="mb-4">
+                {/* Campo de entrada para categoría con autocompletar */}
+                <div className="form-group">
+                  <label className="block text-sm font-medium">Categoría</label>
+                  <input
+                    type="text"
+                    className="border p-2 rounded w-full"
+                    placeholder="Buscar o crear categoría..."
+                    value={categoriaInput}
+                    onChange={handleCategoriaInputChange}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
+                    required
+                  />
+                  {/* Lista de sugerencias mostrada al enfocarse */}
+                  {showSuggestions && categoriaInput && (
+                    <ul className="absolute bg-gray-300 border  mt-1 max-h-40 overflow-auto z-10">
+                      {filteredCategorias.map(c => (
+                        <li key={c.id} onMouseDown={() => handleCategoriaSelect(c)} className="cursor-pointer px-2 py-1 hover:bg-gray-200">
+                          {c.descripcion}
+                        </li>
+                      ))}
+                      {filteredCategorias.length === 0 && (
+                        <li onMouseDown={handleCrearNuevaCategoria} className="cursor-pointer px-2 py-1 hover:bg-gray-200">
+                          Crear nueva categoría "{categoriaInput}"
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              </div>
+              <div className="mb-4">
                 <label className="block text-sm font-medium">
                   Empleado Asignado
                 </label>
@@ -362,23 +450,11 @@ export default function Tareas() {
                   required
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium">Categoría</label>
-                <select
-                  name="id_categoria"
-                  value={newTask.id_categoria}
-                  onChange={handleInputChange}
-                  className="border p-2 rounded w-full"
-                  required
-                >
-                  <option value="">Selecciona una categoría</option>
-                  {categorias.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.descripcion}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
+
+
+
+
               <div className="flex justify-between">
                 <button
                   onClick={handleModalClose}
@@ -603,11 +679,10 @@ export default function Tareas() {
                       handlePageChange(currentPage - 1, setPage, totalLength)
                     }
                     disabled={currentPage <= 0}
-                    className={`px-3 py-1 border rounded ${
-                      currentPage <= 0
-                        ? "bg-gray-300 cursor-not-allowed text-gray-600"
-                        : "bg-gray-300 hover:bg-gray-400"
-                    }`}
+                    className={`px-3 py-1 border rounded ${currentPage <= 0
+                      ? "bg-gray-300 cursor-not-allowed text-gray-600"
+                      : "bg-gray-300 hover:bg-gray-400"
+                      }`}
                   >
                     Anterior
                   </button>
@@ -619,11 +694,10 @@ export default function Tareas() {
                         onClick={() =>
                           handlePageChange(i, setPage, totalLength)
                         }
-                        className={`px-3 py-1 rounded border ${
-                          i === currentPage
-                            ? "bg-gray-600 text-white"
-                            : "bg-white hover:bg-gray-400"
-                        }`}
+                        className={`px-3 py-1 rounded border ${i === currentPage
+                          ? "bg-gray-600 text-white"
+                          : "bg-white hover:bg-gray-400"
+                          }`}
                       >
                         {i + 1}
                       </button>
@@ -636,11 +710,10 @@ export default function Tareas() {
                     disabled={
                       currentPage >= Math.ceil(totalLength / itemsPerPage) - 1
                     }
-                    className={`px-3 py-1 border rounded ${
-                      currentPage >= Math.ceil(totalLength / itemsPerPage) - 1
-                        ? "bg-gray-300 cursor-not-allowed text-gray-600"
-                        : "bg-gray-300 hover:bg-gray-400"
-                    }`}
+                    className={`px-3 py-1 border rounded ${currentPage >= Math.ceil(totalLength / itemsPerPage) - 1
+                      ? "bg-gray-300 cursor-not-allowed text-gray-600"
+                      : "bg-gray-300 hover:bg-gray-400"
+                      }`}
                   >
                     Siguiente
                   </button>
