@@ -253,74 +253,69 @@ export default function WarehouseManager() {
     if (!warehouseSize) return null
 
     return (
-      <div className="overflow-auto bg-gray-50 border rounded-lg shadow-inner">
-        <div
-          className="relative"
-          style={{
-            width: warehouseSize.cols * cellSize,
-            height: warehouseSize.rows * cellSize,
-          }}
-        >
-          {/* Grid lines */}
-          {showGrid && (
-            <div
-              className="absolute inset-0 grid"
-              style={{
-                gridTemplateColumns: `repeat(${warehouseSize.cols}, ${cellSize}px)`,
-                gridTemplateRows: `repeat(${warehouseSize.rows}, ${cellSize}px)`,
-              }}
-            >
-              {Array.from({ length: warehouseSize.rows * warehouseSize.cols }).map((_, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200"
-                  onDragOver={onDragOver}
-                  onDrop={(e) => {
-                    const row = Math.floor(index / warehouseSize.cols)
-                    const col = index % warehouseSize.cols
-                    onDrop(e, row, col)
-                  }}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Shelves */}
-          {shelves.map((shelf) => {
-            const { row, col } = shelf.position
-            const isHorizontal = shelf.orientation === "horizontal"
-
-            return (
-              <div
-                key={shelf.id}
-                className={`absolute flex items-center justify-center cursor-move rounded-md shadow-md transition-all duration-200 
-                  ${isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
-                style={{
-                  left: col * cellSize,
-                  top: row * cellSize,
-                  width: isHorizontal ? cellSize * 2 : cellSize,
-                  height: isHorizontal ? cellSize : cellSize * 2,
-                  zIndex: 10,
-                }}
-                draggable
-                onDragStart={(e) => onDragStart(e, shelf)}
-                onClick={() => openShelfModal(shelf)}
-              >
-                <div className="text-xs font-medium truncate px-1 text-center">
-                  {shelf.name}
-                  {shelf.products && shelf.products.length > 0 && (
-                    <div className="mt-1">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {shelf.products.length} productos
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+      <div className="overflow-auto bg-gray-50 border rounded-lg shadow-inner h-[600px]">
+  <div
+    className="relative w-full h-full"
+  >
+    {showGrid && (
+      <div
+        className="absolute inset-0 grid"
+        style={{
+          gridTemplateColumns: `repeat(${warehouseSize.cols}, 1fr)`,
+          gridTemplateRows: `repeat(${warehouseSize.rows}, 1fr)`,
+        }}
+      >
+        {Array.from({ length: warehouseSize.rows * warehouseSize.cols }).map((_, index) => (
+          <div
+            key={index}
+            className="border border-gray-200"
+            onDragOver={onDragOver}
+            onDrop={(e) => {
+              const row = Math.floor(index / warehouseSize.cols)
+              const col = index % warehouseSize.cols
+              onDrop(e, row, col)
+            }}
+          />
+        ))}
       </div>
+    )}
+
+    {/* Estanterías posicionadas */}
+    {shelves.map((shelf) => {
+      const { row, col } = shelf.position
+      const isHorizontal = shelf.orientation === "horizontal"
+
+      return (
+        <div
+          key={shelf.id}
+          className={`absolute flex items-center justify-center cursor-move rounded-md shadow-md transition-all duration-200 
+            ${isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
+          style={{
+            left: `calc(${(col / warehouseSize.cols) * 100}% + 1px)`,
+            top: `calc(${(row / warehouseSize.rows) * 100}% + 1px)`,
+            width: `calc(${isHorizontal ? 2 : 1} * (100% / ${warehouseSize.cols}) - 2px)`,
+            height: `calc(${isHorizontal ? 1 : 2} * (100% / ${warehouseSize.rows}) - 2px)`,
+            zIndex: 10,
+          }}
+          draggable
+          onDragStart={(e) => onDragStart(e, shelf)}
+          onClick={() => openShelfModal(shelf)}
+        >
+          <div className="text-xs font-medium truncate px-1 text-center">
+            {shelf.name}
+            {shelf.products && shelf.products.length > 0 && (
+              <div className="mt-1">
+                <Badge variant="secondary" className="text-[10px]">
+                  {shelf.products.length} productos
+                </Badge>
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    })}
+  </div>
+</div>
     )
   }
 
