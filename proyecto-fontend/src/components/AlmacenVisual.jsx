@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Grid, Grid3X3, Save, X, ChevronLeft, Warehouse, LayoutGrid } from 'lucide-react'
+import { Grid, Grid3X3, Save, X, ChevronLeft, Warehouse, LayoutGrid, Package } from "lucide-react"
 import { ShelfModal } from "./shelf-modal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,14 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 
-// API endpoints as constants - ready for future integration
+// API endpoints as constants
 const API_ENDPOINTS = {
   WAREHOUSE: "http://127.0.0.1:8080/api/almacen",
   SHELF: "http://127.0.0.1:8080/api/estanteria",
-  PRODUCT: "/api/producto",
+  PRODUCT: "http://127.0.0.1:8080/api/producto",
 }
 
 export default function WarehouseManager() {
@@ -35,8 +34,9 @@ export default function WarehouseManager() {
   const [warehouseName, setWarehouseName] = useState("Nuevo Almacén")
   const [cellSize, setCellSize] = useState(80) // Cell size in pixels
   const [isMoving, setIsMoving] = useState(false) // Estado para controlar si se está moviendo una estantería
+  const [products, setProducts] = useState([]) // Todos los productos
 
-  // Load data from localStorage on component mount
+  // Load data from API on component mount
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -76,9 +76,13 @@ export default function WarehouseManager() {
                   orientation: shelf.orientacion.toLowerCase(), // Asegurar que esté en minúsculas
                   position: { row, col },
                   products: [],
+                  productCount: 0,
                 }
               })
               setShelves(formattedShelves)
+
+              // Cargar todos los productos
+              await loadAllProducts(formattedShelves)
             }
 
             setSelectedWarehouse(firstWarehouse)
@@ -98,6 +102,62 @@ export default function WarehouseManager() {
 
     fetchData()
   }, [])
+
+  // Cargar todos los productos
+  const loadAllProducts = async (shelvesList) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.PRODUCT)
+      if (response.ok) {
+        const productsData = await response.json()
+        setProducts(productsData)
+
+        // Actualizar las estanterías con el conteo de productos
+        updateShelvesWithProductCounts(shelvesList, productsData)
+      }
+    } catch (error) {
+      console.error("Error loading products", error)
+    }
+  }
+
+  // Actualizar estanterías con conteo de productos
+  const updateShelvesWithProductCounts = (shelvesList, productsData) => {
+    // Crear un mapa de conteo de productos por estantería
+    const productCountByShelf = {}
+    const productsByShelf = {}
+
+    // Inicializar todas las estanterías con 0 productos
+    shelvesList.forEach((shelf) => {
+      productCountByShelf[shelf.id] = 0
+      productsByShelf[shelf.id] = []
+    })
+
+    // Contar productos por estantería
+    productsData.forEach((product) => {
+      const shelfId = product.estanteria?.id_estanteria
+      const warehouseId = product.estanteria?.almacen?.id_almacen
+
+      // Solo contar productos para estanterías en el almacén actual
+      if (shelfId && shelvesList.some((s) => s.id === shelfId)) {
+        if (!productCountByShelf[shelfId]) {
+          productCountByShelf[shelfId] = 0
+          productsByShelf[shelfId] = []
+        }
+        productCountByShelf[shelfId]++
+        productsByShelf[shelfId].push(product)
+      }
+    })
+
+    // Actualizar las estanterías con el conteo
+    const updatedShelves = shelvesList.map((shelf) => {
+      return {
+        ...shelf,
+        productCount: productCountByShelf[shelf.id] || 0,
+        products: productsByShelf[shelf.id] || [],
+      }
+    })
+
+    setShelves(updatedShelves)
+  }
 
   // Create a new warehouse
   const createWarehouse = async () => {
@@ -170,10 +230,14 @@ export default function WarehouseManager() {
             name: `Estantería ${shelf.id_estanteria}`,
             orientation: shelf.orientacion.toLowerCase(), // Asegurar que esté en minúsculas
             position: { row, col },
-            products: [],
+            products: [], // Inicialmente vacío, se cargarán después
+            productCount: 0,
           }
         })
         setShelves(formattedShelves)
+
+        // Cargar productos para cada estantería
+        await loadAllProducts(formattedShelves)
       } else {
         setShelves([])
       }
@@ -268,13 +332,14 @@ export default function WarehouseManager() {
       if (response.ok) {
         const createdShelf = await response.json()
         console.log("Estantería creada:", createdShelf)
-        
+
         const formattedShelf = {
           id: createdShelf.id_estanteria,
           name: `Estantería ${createdShelf.id_estanteria}`,
           orientation: createdShelf.orientacion.toLowerCase(), // Convertir a minúsculas para mantener consistencia
           position: { row: newRow, col: newCol },
           products: [],
+          productCount: 0,
         }
 
         setShelves([...shelves, formattedShelf])
@@ -292,12 +357,12 @@ export default function WarehouseManager() {
   // Move a shelf
   const moveShelf = async (id, newRow, newCol) => {
     if (isMoving) return // Evitar múltiples operaciones simultáneas
-    
+
     setIsMoving(true) // Indicar que se está moviendo una estantería
-    
+
     try {
       // Obtener la estantería actual para mantener su orientación
-      const currentShelf = shelves.find((s) => s.id === parseInt(id))
+      const currentShelf = shelves.find((s) => s.id === Number.parseInt(id))
       if (!currentShelf) {
         console.error("No se encontró la estantería con ID:", id)
         setIsMoving(false)
@@ -308,14 +373,14 @@ export default function WarehouseManager() {
 
       // Actualizar primero la UI para una experiencia más fluida
       const updatedShelves = shelves.map((shelf) =>
-        shelf.id === parseInt(id) ? { ...shelf, position: { row: newRow, col: newCol } } : shelf
+        shelf.id === Number.parseInt(id) ? { ...shelf, position: { row: newRow, col: newCol } } : shelf,
       )
       setShelves(updatedShelves)
 
       // Formato correcto para PUT de estantería
       const updateData = {
-        id_estanteria: parseInt(id), // Asegurarse de que sea un número
-        id_almacen: parseInt(selectedWarehouse.id), // Asegurarse de que sea un número
+        id_estanteria: Number.parseInt(id), // Asegurarse de que sea un número
+        id_almacen: Number.parseInt(selectedWarehouse.id), // Asegurarse de que sea un número
         posicion: `${newRow},${newCol}`,
         orientacion: currentShelf.orientation.charAt(0).toUpperCase() + currentShelf.orientation.slice(1), // Capitalizar primera letra
       }
@@ -334,15 +399,15 @@ export default function WarehouseManager() {
       if (!response.ok) {
         const errorText = await response.text()
         console.error("Error al actualizar estantería:", errorText)
-        
+
         // Si falla, revertir el cambio en la UI
-        const originalShelves = shelves.map(shelf => ({...shelf})) // Copia profunda
+        const originalShelves = shelves.map((shelf) => ({ ...shelf })) // Copia profunda
         setShelves(originalShelves)
-        
+
         alert(`Error al mover la estantería: ${errorText}`)
       } else {
         console.log("Estantería movida exitosamente")
-        
+
         // Recargar las estanterías para asegurarse de que todo está sincronizado
         const refreshResponse = await fetch(`${API_ENDPOINTS.SHELF}/${selectedWarehouse.id}`)
         if (refreshResponse.ok) {
@@ -354,19 +419,21 @@ export default function WarehouseManager() {
               name: `Estantería ${shelf.id_estanteria}`,
               orientation: shelf.orientacion.toLowerCase(),
               position: { row, col },
-              products: [],
+              products: currentShelf.products || [],
+              productCount: currentShelf.productCount || 0,
             }
           })
           setShelves(refreshedShelves)
+          await loadAllProducts(refreshedShelves)
         }
       }
     } catch (error) {
       console.error("Error updating shelf position", error)
-      
+
       // Revertir cambios en caso de error
       const originalShelves = [...shelves]
       setShelves(originalShelves)
-      
+
       alert(`Error al mover la estantería: ${error.message}`)
     } finally {
       setIsMoving(false) // Finalizar el movimiento
@@ -401,6 +468,8 @@ export default function WarehouseManager() {
   // Close shelf modal
   const closeShelfModal = () => {
     setSelectedShelf(null)
+    // Recargar productos después de cerrar el modal para actualizar los conteos
+    loadAllProducts(shelves)
   }
 
   // Save shelf changes
@@ -444,23 +513,23 @@ export default function WarehouseManager() {
       e.preventDefault()
       return
     }
-    
+
     // Guardar el ID de la estantería y su orientación
     e.dataTransfer.setData("shelfId", shelf.id.toString())
     e.dataTransfer.setData("orientation", shelf.orientation)
-    
+
     // Añadir una clase visual para indicar que se está arrastrando
     e.currentTarget.classList.add("opacity-50")
-    
+
     // Establecer la imagen de arrastre (opcional)
-    const dragImage = document.createElement('div')
-    dragImage.classList.add('drag-image')
+    const dragImage = document.createElement("div")
+    dragImage.classList.add("drag-image")
     dragImage.textContent = shelf.name
-    dragImage.style.position = 'absolute'
-    dragImage.style.top = '-1000px'
+    dragImage.style.position = "absolute"
+    dragImage.style.top = "-1000px"
     document.body.appendChild(dragImage)
     e.dataTransfer.setDragImage(dragImage, 0, 0)
-    
+
     // Limpiar después
     setTimeout(() => {
       document.body.removeChild(dragImage)
@@ -485,23 +554,23 @@ export default function WarehouseManager() {
 
   const onDrop = (e, row, col) => {
     e.preventDefault()
-    
+
     // Quitar el indicador visual
     e.currentTarget.classList.remove("bg-gray-100")
-    
+
     if (isMoving) return // No permitir soltar si ya hay una operación en curso
-    
+
     const shelfId = e.dataTransfer.getData("shelfId")
     const orientation = e.dataTransfer.getData("orientation")
-    
+
     console.log("Shelf ID recibido:", shelfId)
     console.log("Orientación recibida:", orientation)
-    
+
     if (!shelfId) {
       console.error("No se recibió ID de estantería")
       return
     }
-    
+
     const shelf = shelves.find((s) => s.id.toString() === shelfId.toString())
     if (!shelf) {
       console.error("No se encontró la estantería con ID:", shelfId)
@@ -515,10 +584,8 @@ export default function WarehouseManager() {
     }
 
     // Check if the position is already occupied
-    const isOccupied = shelves.some((s) => 
-      s.id.toString() !== shelfId.toString() && 
-      s.position.row === row && 
-      s.position.col === col
+    const isOccupied = shelves.some(
+      (s) => s.id.toString() !== shelfId.toString() && s.position.row === row && s.position.col === col,
     )
 
     if (isOccupied) {
@@ -529,10 +596,7 @@ export default function WarehouseManager() {
 
     // Verificar si la nueva posición respeta los límites según la orientación
     const isHorizontal = orientation === "horizontal"
-    if (
-      (isHorizontal && col + 1 >= warehouseSize.cols) ||
-      (!isHorizontal && row + 1 >= warehouseSize.rows)
-    ) {
+    if ((isHorizontal && col + 1 >= warehouseSize.cols) || (!isHorizontal && row + 1 >= warehouseSize.rows)) {
       console.log("La estantería se saldría de los límites")
       alert("La estantería no cabe en esa posición.")
       return
@@ -541,11 +605,9 @@ export default function WarehouseManager() {
     // Verificar si la segunda celda que ocuparía está libre
     const secondRow = isHorizontal ? row : row + 1
     const secondCol = isHorizontal ? col + 1 : col
-    
-    const secondCellOccupied = shelves.some((s) => 
-      s.id.toString() !== shelfId.toString() && 
-      s.position.row === secondRow && 
-      s.position.col === secondCol
+
+    const secondCellOccupied = shelves.some(
+      (s) => s.id.toString() !== shelfId.toString() && s.position.row === secondRow && s.position.col === secondCol,
     )
 
     if (secondCellOccupied) {
@@ -607,7 +669,7 @@ export default function WarehouseManager() {
             return (
               <div
                 key={shelf.id}
-                className={`absolute flex items-center justify-center cursor-move rounded-md shadow-md transition-all duration-200 
+                className={`absolute flex flex-col items-center justify-center cursor-move rounded-md shadow-md transition-all duration-200 
             ${isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
                 style={{
                   left: `calc(${(col / warehouseSize.cols) * 100}% + 1px)`,
@@ -623,15 +685,10 @@ export default function WarehouseManager() {
                 data-shelf-id={shelf.id}
                 data-orientation={shelf.orientation}
               >
-                <div className="text-xs font-medium truncate px-1 text-center">
-                  {shelf.name}
-                  {shelf.products && shelf.products.length > 0 && (
-                    <div className="mt-1">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {shelf.products.length} productos
-                      </Badge>
-                    </div>
-                  )}
+                <div className="text-xs font-medium truncate px-1 text-center">{shelf.name}</div>
+                <div className="flex items-center mt-1 bg-white text-black rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                  <Package className="h-3 w-3 mr-1" />
+                  {shelf.productCount}
                 </div>
               </div>
             )
@@ -650,7 +707,7 @@ export default function WarehouseManager() {
           </div>
         </div>
       )}
-      
+
       {isMoving && (
         <div className="fixed inset-0 bg-black/10 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg shadow-lg">
@@ -658,7 +715,7 @@ export default function WarehouseManager() {
           </div>
         </div>
       )}
-      
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex items-center justify-between">
           <TabsList>
