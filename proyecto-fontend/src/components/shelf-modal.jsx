@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Plus, Pencil, Trash2, Package } from "lucide-react"
@@ -17,8 +16,9 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
   const [categories, setCategories] = useState([])
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [showProductModal, setShowProductModal] = useState(false)
+  const shelfId = shelf.id
 
-  // Cargar productos y categorías al abrir el modal
+  // Modificar la función para cargar productos y añadir funcionalidad para productos sin estantería
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -49,6 +49,61 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
 
     fetchData()
   }, [shelf.id, apiEndpoints.PRODUCT])
+
+  // Añadir una nueva función para cargar productos sin estantería
+  const [availableProducts, setAvailableProducts] = useState([])
+  const [showAvailableProductsModal, setShowAvailableProductsModal] = useState(false)
+
+  const loadAvailableProducts = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${apiEndpoints.PRODUCT}`)
+      if (response.ok) {
+        const allProducts = await response.json()
+        // Filtrar productos que no tienen estantería asignada
+        const productsWithoutShelf = allProducts.filter((product) => !product.estanteria || product.estanteria === null)
+        setAvailableProducts(productsWithoutShelf)
+        setShowAvailableProductsModal(true)
+      }
+    } catch (error) {
+      console.error("Error cargando productos disponibles:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Añadir función para asignar un producto existente a esta estantería
+  const assignProductToShelf = async (product) => {
+    setIsLoading(true)
+    try {
+      const updatedProduct = {
+        ...product,
+        estanteria: { id_estanteria: shelf.id },
+      }
+
+      const response = await fetch(`${apiEndpoints.PRODUCT}/${product.id_producto}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedProduct),
+      })
+
+      if (response.ok) {
+        const savedProduct = await response.json()
+        setProducts([...products, savedProduct])
+        setShowAvailableProductsModal(false)
+      } else {
+        const errorText = await response.text()
+        throw new Error(errorText)
+      }
+    } catch (error) {
+      console.error("Error asignando producto:", error)
+      alert(`Error al asignar producto: ${error.message}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({
@@ -87,6 +142,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
     setShowProductModal(true)
   }
 
+  // Mejorar la función handleDeleteProduct para confirmar y manejar errores
   const handleDeleteProduct = async (productId) => {
     if (!confirm("¿Estás seguro de que deseas eliminar este producto?")) return
 
@@ -98,8 +154,10 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
 
       if (response.ok) {
         setProducts(products.filter((p) => p.id_producto !== productId))
+        alert("Producto eliminado correctamente")
       } else {
         const errorText = await response.text()
+        console.error("Error al eliminar el producto:", errorText)
         alert(`Error al eliminar el producto: ${errorText}`)
       }
     } catch (error) {
@@ -110,22 +168,32 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
     }
   }
 
+  // Mejorar la función saveProduct para manejar mejor la creación y actualización
   const saveProduct = async (productData) => {
     setIsLoading(true)
     try {
+      // Asegurarse de que la estantería esté correctamente formateada
+      const dataToSend = {
+        ...productData,
+        estanteria: { id_estanteria: shelfId },
+      }
+
       const method = productData.id_producto ? "PUT" : "POST"
       const url = productData.id_producto ? `${apiEndpoints.PRODUCT}/${productData.id_producto}` : apiEndpoints.PRODUCT
+
+      console.log(`Enviando ${method} a ${url} con datos:`, JSON.stringify(dataToSend))
 
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(productData),
+        body: JSON.stringify(dataToSend),
       })
 
       if (response.ok) {
         const savedProduct = await response.json()
+        console.log("Respuesta del servidor:", savedProduct)
 
         if (method === "POST") {
           setProducts([...products, savedProduct])
@@ -134,12 +202,15 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
         }
 
         setShowProductModal(false)
+        alert(method === "POST" ? "Producto creado correctamente" : "Producto actualizado correctamente")
       } else {
         const errorText = await response.text()
-        throw new Error(errorText)
+        console.error("Error en la respuesta del servidor:", errorText)
+        throw new Error(errorText || "Error en la operación")
       }
     } catch (error) {
       console.error("Error guardando producto:", error)
+      alert(`Error: ${error.message}`)
       throw error
     } finally {
       setIsLoading(false)
@@ -164,16 +235,21 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
                   readOnly={true}
                 />
               </div>
-
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Productos ({products.length})</Label>
-                <Button type="button" size="sm" onClick={handleAddProduct}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Añadir Producto
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" onClick={handleAddProduct}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Añadir Producto
+                  </Button>
+                  <Button type="button" size="sm" onClick={loadAvailableProducts}>
+                    <Package className="h-4 w-4 mr-1" />
+                    Productos Disponibles
+                  </Button>
+                </div>
               </div>
 
               {products.length > 0 ? (
@@ -252,6 +328,51 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
           categories={categories}
           shelfId={shelf.id}
         />
+      )}
+
+      {showAvailableProductsModal && (
+        <Dialog open={true} onOpenChange={() => setShowAvailableProductsModal(false)}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Productos Disponibles</DialogTitle>
+            </DialogHeader>
+            <div className="max-h-[400px] overflow-auto">
+              {availableProducts.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Cantidad</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead className="w-[100px] text-right">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {availableProducts.map((product) => (
+                      <TableRow key={product.id_producto}>
+                        <TableCell className="font-medium">{product.nombre}</TableCell>
+                        <TableCell>{product.cantidad}</TableCell>
+                        <TableCell>{product.categoria?.descripcion}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" onClick={() => assignProductToShelf(product)}>
+                            Asignar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center p-4">
+                  <p>No hay productos disponibles para asignar</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setShowAvailableProductsModal(false)}>Cerrar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   )

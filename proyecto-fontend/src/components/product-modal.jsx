@@ -63,12 +63,35 @@ export function ProductModal({ product, onClose, onSave, apiEndpoints, categorie
     }
   }
 
+  // Mejorar la función handleSubmit para manejar mejor la edición y creación de productos
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      await onSave(formData)
+      // Validar datos básicos
+      if (!formData.nombre.trim()) {
+        throw new Error("El nombre del producto es obligatorio")
+      }
+
+      if (formData.cantidad < 0) {
+        throw new Error("La cantidad no puede ser negativa")
+      }
+
+      if (!formData.categoria || !formData.categoria.id) {
+        throw new Error("Debe seleccionar una categoría")
+      }
+
+      // Preparar el objeto para enviar a la API
+      const productData = {
+        ...formData,
+        // Asegurarse de que la estantería esté correctamente formateada
+        estanteria: { id_estanteria: shelfId },
+      }
+
+      console.log("Enviando datos del producto:", JSON.stringify(productData))
+
+      await onSave(productData)
       onClose()
     } catch (error) {
       console.error("Error al guardar el producto:", error)

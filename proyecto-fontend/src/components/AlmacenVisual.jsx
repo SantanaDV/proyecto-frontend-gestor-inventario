@@ -249,7 +249,51 @@ export default function WarehouseManager() {
 
   // Delete a warehouse
   const deleteWarehouse = async (id) => {
+    if (
+      !confirm(
+        "¿Estás seguro de que deseas eliminar este almacén? Se eliminarán todas las estanterías y se desasociarán los productos.",
+      )
+    ) {
+      return
+    }
+
     try {
+      setIsLoading(true)
+      // Primero obtenemos todas las estanterías del almacén
+      const shelvesResponse = await fetch(`${API_ENDPOINTS.SHELF}/${id}`)
+      if (shelvesResponse.ok) {
+        const shelves = await shelvesResponse.json()
+
+        // Para cada estantería, desasociamos los productos
+        for (const shelf of shelves) {
+          // Obtenemos los productos de esta estantería
+          const productsResponse = await fetch(`${API_ENDPOINTS.PRODUCT}`)
+          if (productsResponse.ok) {
+            const allProducts = await productsResponse.json()
+            const shelfProducts = allProducts.filter(
+              (product) => product.estanteria && product.estanteria.id_estanteria === shelf.id_estanteria,
+            )
+
+            // Desasociamos cada producto de la estantería
+            for (const product of shelfProducts) {
+              const updatedProduct = {
+                ...product,
+                estanteria: null,
+              }
+
+              await fetch(`${API_ENDPOINTS.PRODUCT}/${product.id_producto}`, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(updatedProduct),
+              })
+            }
+          }
+        }
+      }
+
+      // Ahora eliminamos el almacén (la API debería manejar la eliminación de estanterías)
       const response = await fetch(`${API_ENDPOINTS.WAREHOUSE}/${id}`, {
         method: "DELETE",
       })
@@ -261,11 +305,17 @@ export default function WarehouseManager() {
           setWarehouseSize(null)
           setShelves([])
         }
+        alert("Almacén eliminado correctamente")
       } else {
-        console.error("Error deleting warehouse")
+        const errorText = await response.text()
+        console.error("Error deleting warehouse:", errorText)
+        alert(`Error al eliminar el almacén: ${errorText}`)
       }
     } catch (error) {
       console.error("Error deleting warehouse", error)
+      alert(`Error al eliminar el almacén: ${error.message}`)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -442,7 +492,41 @@ export default function WarehouseManager() {
 
   // Delete a shelf
   const deleteShelf = async (id) => {
+    if (
+      !confirm("¿Estás seguro de que deseas eliminar esta estantería? Los productos asociados quedarán sin estantería.")
+    ) {
+      return
+    }
+
     try {
+      setIsLoading(true)
+
+      // Primero obtenemos todos los productos de esta estantería
+      const productsResponse = await fetch(`${API_ENDPOINTS.PRODUCT}`)
+      if (productsResponse.ok) {
+        const allProducts = await productsResponse.json()
+        const shelfProducts = allProducts.filter(
+          (product) => product.estanteria && product.estanteria.id_estanteria === id,
+        )
+
+        // Desasociamos cada producto de la estantería
+        for (const product of shelfProducts) {
+          const updatedProduct = {
+            ...product,
+            estanteria: null,
+          }
+
+          await fetch(`${API_ENDPOINTS.PRODUCT}/${product.id_producto}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedProduct),
+          })
+        }
+      }
+
+      // Ahora eliminamos la estantería
       const response = await fetch(`${API_ENDPOINTS.SHELF}/${id}`, {
         method: "DELETE",
       })
@@ -452,11 +536,17 @@ export default function WarehouseManager() {
         if (selectedShelf?.id === id) {
           setSelectedShelf(null)
         }
+        alert("Estantería eliminada correctamente")
       } else {
-        console.error("Error deleting shelf")
+        const errorText = await response.text()
+        console.error("Error deleting shelf:", errorText)
+        alert(`Error al eliminar la estantería: ${errorText}`)
       }
     } catch (error) {
       console.error("Error deleting shelf", error)
+      alert(`Error al eliminar la estantería: ${error.message}`)
+    } finally {
+      setIsLoading(false)
     }
   }
 
