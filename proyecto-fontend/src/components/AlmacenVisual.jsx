@@ -140,16 +140,28 @@ export default function WarehouseManager() {
   // Add a shelf
   const addShelf = (orientation) => {
     if (!warehouseSize) return
-
+  
     let found = false
     let newRow = 0
     let newCol = 0
-
-    // Find first available position
+  
     for (let row = 0; row < warehouseSize.rows; row++) {
       for (let col = 0; col < warehouseSize.cols; col++) {
-        const conflict = shelves.some((s) => s.position.row === row && s.position.col === col)
-
+        // Dependiendo de la orientación, calcula la segunda celda que ocuparía
+        const secondRow = orientation === "vertical" ? row + 1 : row
+        const secondCol = orientation === "horizontal" ? col + 1 : col
+  
+        // Asegúrate de que la estantería no se salga de los límites
+        if (secondRow >= warehouseSize.rows || secondCol >= warehouseSize.cols) continue
+  
+        const conflict = shelves.some((s) => {
+          const { row: sr, col: sc } = s.position
+          const isSame = (r, c) => (sr === r && sc === c) ||
+            (s.orientation === "horizontal" && sr === r && sc + 1 === c) ||
+            (s.orientation === "vertical" && sr + 1 === r && sc === c)
+          return isSame(row, col) || isSame(secondRow, secondCol)
+        })
+  
         if (!conflict) {
           newRow = row
           newCol = col
@@ -159,12 +171,12 @@ export default function WarehouseManager() {
       }
       if (found) break
     }
-
+  
     if (!found) {
       alert("No hay espacio disponible para una nueva estantería.")
       return
     }
-
+  
     const newShelf = {
       id: `shelf-${Date.now()}`,
       name: `Estantería ${shelves.length + 1}`,
@@ -172,7 +184,7 @@ export default function WarehouseManager() {
       position: { row: newRow, col: newCol },
       products: [],
     }
-
+  
     setShelves([...shelves, newShelf])
   }
 
@@ -229,15 +241,6 @@ export default function WarehouseManager() {
     if (isOccupied) return
 
     moveShelf(shelfId, row, col)
-  }
-
-  // Increase/decrease grid size
-  const zoomIn = () => {
-    setCellSize((prev) => Math.min(prev + 10, 120))
-  }
-
-  const zoomOut = () => {
-    setCellSize((prev) => Math.max(prev - 10, 40))
   }
 
   // Reset warehouse editor
@@ -336,28 +339,6 @@ export default function WarehouseManager() {
 
           {activeTab === "editor" && (
             <div className="flex items-center space-x-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={zoomOut}>
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reducir tamaño</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={zoomIn}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Aumentar tamaño</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -493,7 +474,7 @@ export default function WarehouseManager() {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={() => addShelf("vertical")} variant="secondary">
+                      <Button onClick={() => addShelf("vertical")} variant="default">
                         <Grid className="h-4 w-4 mr-2" />
                         Estantería Vertical
                       </Button>
