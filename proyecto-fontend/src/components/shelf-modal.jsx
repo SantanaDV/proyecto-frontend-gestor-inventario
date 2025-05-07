@@ -18,7 +18,6 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
   const [showProductModal, setShowProductModal] = useState(false)
   const shelfId = shelf.id
 
-  // Modificar la función para cargar productos y añadir funcionalidad para productos sin estantería
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -81,18 +80,32 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
         estanteria: { id_estanteria: shelf.id },
       }
 
+      // Crear un FormData para enviar el producto
+      const formData = new FormData()
+      formData.append(
+        "producto",
+        new Blob([JSON.stringify(updatedProduct)], {
+          type: "application/json",
+        }),
+      )
+
       const response = await fetch(`${apiEndpoints.PRODUCT}/${product.id_producto}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedProduct),
+        body: formData,
       })
 
       if (response.ok) {
         const savedProduct = await response.json()
         setProducts([...products, savedProduct])
         setShowAvailableProductsModal(false)
+
+        // Recargar los productos después de asignar
+        const productsResponse = await fetch(`${apiEndpoints.PRODUCT}`)
+        if (productsResponse.ok) {
+          const allProducts = await productsResponse.json()
+          const shelfProducts = allProducts.filter((p) => p.estanteria && p.estanteria.id_estanteria === shelf.id)
+          setProducts(shelfProducts)
+        }
       } else {
         const errorText = await response.text()
         throw new Error(errorText)
@@ -172,23 +185,23 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
   const saveProduct = async (productData) => {
     setIsLoading(true)
     try {
-      // Asegurarse de que la estantería esté correctamente formateada
-      const dataToSend = {
-        ...productData,
-        estanteria: { id_estanteria: shelfId },
-      }
+      // Crear un FormData para enviar el producto
+      const formData = new FormData()
+      formData.append(
+        "producto",
+        new Blob([JSON.stringify(productData)], {
+          type: "application/json",
+        }),
+      )
 
       const method = productData.id_producto ? "PUT" : "POST"
       const url = productData.id_producto ? `${apiEndpoints.PRODUCT}/${productData.id_producto}` : apiEndpoints.PRODUCT
 
-      console.log(`Enviando ${method} a ${url} con datos:`, JSON.stringify(dataToSend))
+      console.log(`Enviando ${method} a ${url} con datos:`, JSON.stringify(productData))
 
       const response = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(dataToSend),
+        body: formData,
       })
 
       if (response.ok) {

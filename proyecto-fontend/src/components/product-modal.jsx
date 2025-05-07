@@ -63,7 +63,6 @@ export function ProductModal({ product, onClose, onSave, apiEndpoints, categorie
     }
   }
 
-  // Mejorar la función handleSubmit para manejar mejor la edición y creación de productos
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)

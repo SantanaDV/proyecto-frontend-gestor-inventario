@@ -133,17 +133,18 @@ export default function WarehouseManager() {
 
     // Contar productos por estantería
     productsData.forEach((product) => {
-      const shelfId = product.estanteria?.id_estanteria
-      const warehouseId = product.estanteria?.almacen?.id_almacen
+      if (product.estanteria && product.estanteria.id_estanteria) {
+        const shelfId = product.estanteria.id_estanteria
 
-      // Solo contar productos para estanterías en el almacén actual
-      if (shelfId && shelvesList.some((s) => s.id === shelfId)) {
-        if (!productCountByShelf[shelfId]) {
-          productCountByShelf[shelfId] = 0
-          productsByShelf[shelfId] = []
+        // Verificar si esta estantería está en nuestra lista
+        if (shelvesList.some((s) => s.id === shelfId)) {
+          if (!productCountByShelf[shelfId]) {
+            productCountByShelf[shelfId] = 0
+            productsByShelf[shelfId] = []
+          }
+          productCountByShelf[shelfId]++
+          productsByShelf[shelfId].push(product)
         }
-        productCountByShelf[shelfId]++
-        productsByShelf[shelfId].push(product)
       }
     })
 
