@@ -6,17 +6,13 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Plus, Pencil, Trash2, Package } from "lucide-react"
-import { ProductModal } from "./product-modal"
+import { Loader2, Pencil, Trash2, Package } from "lucide-react"
 
 export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
   const [formData, setFormData] = useState({ ...shelf })
   const [isLoading, setIsLoading] = useState(false)
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [showProductModal, setShowProductModal] = useState(false)
-  const shelfId = shelf.id
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,21 +71,27 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
   const assignProductToShelf = async (product) => {
     setIsLoading(true)
     try {
+      // Preparar el objeto producto con la estantería asignada
       const updatedProduct = {
-        ...product,
-        estanteria: { id_estanteria: shelf.id },
+        id_producto: product.id_producto,
+        nombre: product.nombre,
+        cantidad: product.cantidad,
+        estado: product.estado,
+        codigoQr: product.codigoQr,
+        url_img: product.url_img,
+        fecha_creacion: product.fecha_creacion,
+        nfc_id: product.nfc_id,
+        id_categoria: product.categoria?.id || product.id_categoria,
+        id_estanteria: shelf.id,
       }
 
-      // Crear un FormData para enviar el producto
-      const formData = new FormData()
-      formData.append(
-        "producto",
-        new Blob([JSON.stringify(updatedProduct)], {
-          type: "application/json",
-        }),
-      )
+      console.log("Enviando producto:", updatedProduct)
 
-      const response = await fetch(`${apiEndpoints.PRODUCT}/${product.id_producto}`, {
+      // Crear un objeto FormData y añadir el producto como un campo
+      const formData = new FormData()
+      formData.append("producto", JSON.stringify(updatedProduct))
+
+      const response = await fetch(`${apiEndpoints.PRODUCT}`, {
         method: "PUT",
         body: formData,
       })
@@ -254,10 +256,6 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
               <div className="flex items-center justify-between">
                 <Label>Productos ({products.length})</Label>
                 <div className="flex gap-2">
-                  <Button type="button" size="sm" onClick={handleAddProduct}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Añadir Producto
-                  </Button>
                   <Button type="button" size="sm" onClick={loadAvailableProducts}>
                     <Package className="h-4 w-4 mr-1" />
                     Productos Disponibles
@@ -331,17 +329,6 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
           </form>
         </DialogContent>
       </Dialog>
-
-      {showProductModal && (
-        <ProductModal
-          product={selectedProduct}
-          onClose={() => setShowProductModal(false)}
-          onSave={saveProduct}
-          apiEndpoints={apiEndpoints}
-          categories={categories}
-          shelfId={shelf.id}
-        />
-      )}
 
       {showAvailableProductsModal && (
         <Dialog open={true} onOpenChange={() => setShowAvailableProductsModal(false)}>
