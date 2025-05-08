@@ -201,7 +201,6 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
       setIsLoading(false)
     }
   }
-
   return (
     <>
       <Dialog open={true} onOpenChange={onClose}>
