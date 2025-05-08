@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Package, Unlink, Pencil } from "lucide-react"
+import { Loader2, Package, Unlink } from "lucide-react"
 
 export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
   const [formData, setFormData] = useState({ ...shelf })
@@ -67,22 +67,36 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
     }
   }
 
+  // Añadir una nueva función para controlar el diálogo de selección de balda:
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [showBaldaModal, setShowBaldaModal] = useState(false)
+  const [baldaValue, setBaldaValue] = useState("")
+
+  // Modificar la función assignProductToShelf para que muestre un diálogo que solicite el número de balda antes de asignar el producto.
+  const assignProductToShelf = (product) => {
+    setSelectedProduct(product)
+    setShowBaldaModal(true)
+  }
+
   // Añadir función para asignar un producto existente a esta estantería
-  const assignProductToShelf = async (product) => {
+  const completeProductAssignment = async () => {
+    if (!selectedProduct || !baldaValue) return
+
     setIsLoading(true)
     try {
-      // Preparar el objeto producto con la estantería asignada
+      // Preparar el objeto producto con la estantería asignada y la balda
       const updatedProduct = {
-        id_producto: product.id_producto,
-        nombre: product.nombre,
-        cantidad: product.cantidad,
-        estado: product.estado,
-        codigoQr: product.codigoQr,
-        url_img: product.url_img,
-        fecha_creacion: product.fecha_creacion,
-        nfc_id: product.nfc_id,
-        id_categoria: product.categoria?.id || product.id_categoria,
+        id_producto: selectedProduct.id_producto,
+        nombre: selectedProduct.nombre,
+        cantidad: selectedProduct.cantidad,
+        estado: selectedProduct.estado,
+        codigoQr: selectedProduct.codigoQr,
+        url_img: selectedProduct.url_img,
+        fecha_creacion: selectedProduct.fecha_creacion,
+        nfc_id: selectedProduct.nfc_id,
+        id_categoria: selectedProduct.categoria?.id || selectedProduct.id_categoria,
         id_estanteria: shelf.id,
+        balda: Number.parseInt(baldaValue),
       }
 
       console.log("Enviando producto:", updatedProduct)
@@ -100,6 +114,9 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
         const savedProduct = await response.json()
         setProducts([...products, savedProduct])
         setShowAvailableProductsModal(false)
+        setShowBaldaModal(false)
+        setBaldaValue("")
+        setSelectedProduct(null)
 
         // Recargar los productos después de asignar
         const productsResponse = await fetch(`${apiEndpoints.PRODUCT}`)
@@ -322,6 +339,38 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
             </div>
             <DialogFooter>
               <Button onClick={() => setShowAvailableProductsModal(false)}>Cerrar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {showBaldaModal && selectedProduct && (
+        <Dialog open={true} onOpenChange={() => setShowBaldaModal(false)}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Seleccionar Balda</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="balda">Número de Balda</Label>
+                <input
+                  id="balda"
+                  type="number"
+                  value={baldaValue}
+                  onChange={(e) => setBaldaValue(e.target.value)}
+                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"
+                  placeholder="Ingrese el número de balda"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowBaldaModal(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={completeProductAssignment} disabled={!baldaValue || isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Asignar
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
