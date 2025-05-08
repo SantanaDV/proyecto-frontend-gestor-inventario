@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Pencil, Trash2, Package } from "lucide-react"
+import { Loader2, Trash2, Package } from "lucide-react"
 
 export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
   const [formData, setFormData] = useState({ ...shelf })
@@ -57,6 +57,8 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
         const allProducts = await response.json()
         // Filtrar productos que no tienen estantería asignada
         const productsWithoutShelf = allProducts.filter((product) => !product.estanteria || product.estanteria === null)
+        // Ordenar por nombre
+        productsWithoutShelf.sort((a, b) => a.nombre.localeCompare(b.nombre))
         setAvailableProducts(productsWithoutShelf)
         setShowAvailableProductsModal(true)
       }
@@ -147,86 +149,54 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
     }
   }
 
-  const handleAddProduct = () => {
-    setSelectedProduct(null)
-    setShowProductModal(true)
-  }
-
-  const handleEditProduct = (product) => {
-    setSelectedProduct(product)
-    setShowProductModal(true)
-  }
-
-  // Mejorar la función handleDeleteProduct para confirmar y manejar errores
-  const handleDeleteProduct = async (productId) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este producto?")) return
+  // Cambiar la función para desasignar en lugar de eliminar
+  const handleUnassignProduct = async (productId) => {
+    if (!confirm("¿Estás seguro de que deseas desasignar este producto de la estantería?")) return
 
     setIsLoading(true)
     try {
-      const response = await fetch(`${apiEndpoints.PRODUCT}/${productId}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        setProducts(products.filter((p) => p.id_producto !== productId))
-        alert("Producto eliminado correctamente")
-      } else {
-        const errorText = await response.text()
-        console.error("Error al eliminar el producto:", errorText)
-        alert(`Error al eliminar el producto: ${errorText}`)
+      // Primero obtenemos el producto actual
+      const productResponse = await fetch(`${apiEndpoints.PRODUCT}/${productId}`)
+      if (!productResponse.ok) {
+        throw new Error("No se pudo obtener la información del producto")
       }
-    } catch (error) {
-      console.error("Error eliminando producto:", error)
-      alert(`Error al eliminar el producto: ${error.message}`)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
-  // Mejorar la función saveProduct para manejar mejor la creación y actualización
-  const saveProduct = async (productData) => {
-    setIsLoading(true)
-    try {
-      // Crear un FormData para enviar el producto
+      const product = await productResponse.json()
+
+      // Preparar el objeto producto con la estantería asignada a null
+      const updatedProduct = {
+        id_producto: product.id_producto,
+        nombre: product.nombre,
+        cantidad: product.cantidad,
+        estado: product.estado,
+        codigoQr: product.codigoQr,
+        url_img: product.url_img,
+        fecha_creacion: product.fecha_creacion,
+        nfc_id: product.nfc_id,
+        id_categoria: product.categoria?.id || product.id_categoria,
+        id_estanteria: null, // Establecer a null para desasignar
+      }
+
+      // Crear un objeto FormData y añadir el producto como un campo
       const formData = new FormData()
-      formData.append(
-        "producto",
-        new Blob([JSON.stringify(productData)], {
-          type: "application/json",
-        }),
-      )
+      formData.append("producto", JSON.stringify(updatedProduct))
 
-      const method = productData.id_producto ? "PUT" : "POST"
-      const url = productData.id_producto ? `${apiEndpoints.PRODUCT}/${productData.id_producto}` : apiEndpoints.PRODUCT
-
-      console.log(`Enviando ${method} a ${url} con datos:`, JSON.stringify(productData))
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(`${apiEndpoints.PRODUCT}`, {
+        method: "PUT",
         body: formData,
       })
 
       if (response.ok) {
-        const savedProduct = await response.json()
-        console.log("Respuesta del servidor:", savedProduct)
-
-        if (method === "POST") {
-          setProducts([...products, savedProduct])
-        } else {
-          setProducts(products.map((p) => (p.id_producto === savedProduct.id_producto ? savedProduct : p)))
-        }
-
-        setShowProductModal(false)
-        alert(method === "POST" ? "Producto creado correctamente" : "Producto actualizado correctamente")
+        // Eliminar el producto de la lista local
+        setProducts(products.filter((p) => p.id_producto !== productId))
+        alert("Producto desasignado correctamente")
       } else {
         const errorText = await response.text()
-        console.error("Error en la respuesta del servidor:", errorText)
-        throw new Error(errorText || "Error en la operación")
+        throw new Error(errorText)
       }
     } catch (error) {
-      console.error("Error guardando producto:", error)
-      alert(`Error: ${error.message}`)
-      throw error
+      console.error("Error desasignando producto:", error)
+      alert(`Error al desasignar el producto: ${error.message}`)
     } finally {
       setIsLoading(false)
     }
@@ -288,13 +258,10 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
                           <TableCell>{product.categoria?.descripcion}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-1">
-                              <Button variant="ghost" size="icon" onClick={() => handleEditProduct(product)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDeleteProduct(product.id_producto)}
+                                onClick={() => handleUnassignProduct(product.id_producto)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
