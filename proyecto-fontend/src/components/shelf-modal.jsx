@@ -223,6 +223,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
                         <TableHead>Cantidad</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead>Categoría</TableHead>
+                        <TableHead>Balda</TableHead>
                         <TableHead className="w-[100px] text-right">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -237,6 +238,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
                             </Badge>
                           </TableCell>
                           <TableCell>{product.categoria?.descripcion}</TableCell>
+                          <TableCell>{product.balda}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-1">
                               <Button
