@@ -43,7 +43,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
     }
 
     fetchData()
-  }, [shelf.id, apiEndpoints.PRODUCT])
+  }, [shelf.id, apiEndpoints.PRODUCT,setIsLoading])
 
   // Añadir una nueva función para cargar productos sin estantería
   const [availableProducts, setAvailableProducts] = useState([])
@@ -122,19 +122,6 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
     }
   }
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
-
-  const handleOrientationChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      orientation: value,
-    }))
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -176,7 +163,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
         id_categoria: product.categoria?.id || product.id_categoria,
         id_estanteria: null, // Establecer a null para desasignar
       }
-
+      console.log(updatedProduct)
       // Crear un objeto FormData y añadir el producto como un campo
       const formData = new FormData()
       formData.append("producto", JSON.stringify(updatedProduct))
