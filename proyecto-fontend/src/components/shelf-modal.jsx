@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Trash2, Package } from "lucide-react"
+import { Loader2, Package, Unlink, Pencil } from "lucide-react"
 
 export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
   const [formData, setFormData] = useState({ ...shelf })
@@ -43,7 +43,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
     }
 
     fetchData()
-  }, [shelf.id, apiEndpoints.PRODUCT,setIsLoading])
+  }, [shelf.id, apiEndpoints.PRODUCT])
 
   // Añadir una nueva función para cargar productos sin estantería
   const [availableProducts, setAvailableProducts] = useState([])
@@ -57,8 +57,6 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
         const allProducts = await response.json()
         // Filtrar productos que no tienen estantería asignada
         const productsWithoutShelf = allProducts.filter((product) => !product.estanteria || product.estanteria === null)
-        // Ordenar por nombre
-        productsWithoutShelf.sort((a, b) => a.nombre.localeCompare(b.nombre))
         setAvailableProducts(productsWithoutShelf)
         setShowAvailableProductsModal(true)
       }
@@ -121,8 +119,6 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
       setIsLoading(false)
     }
   }
-
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
@@ -135,8 +131,6 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
       setIsLoading(false)
     }
   }
-
-  // Cambiar la función para desasignar en lugar de eliminar
   const handleUnassignProduct = async (productId) => {
     if (!confirm("¿Estás seguro de que deseas desasignar este producto de la estantería?")) return
 
@@ -163,7 +157,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
         id_categoria: product.categoria?.id || product.id_categoria,
         id_estanteria: null, // Establecer a null para desasignar
       }
-      console.log(updatedProduct)
+
       // Crear un objeto FormData y añadir el producto como un campo
       const formData = new FormData()
       formData.append("producto", JSON.stringify(updatedProduct))
@@ -188,6 +182,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
       setIsLoading(false)
     }
   }
+
   return (
     <>
       <Dialog open={true} onOpenChange={onClose}>
@@ -246,10 +241,12 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
                             <div className="flex justify-end space-x-1">
                               <Button
                                 variant="ghost"
-                                size="icon"
+                                size="sm"
                                 onClick={() => handleUnassignProduct(product.id_producto)}
+                                className="flex items-center"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Unlink className="h-4 w-4 mr-1" />
+                                Desasignar
                               </Button>
                             </div>
                           </TableCell>
