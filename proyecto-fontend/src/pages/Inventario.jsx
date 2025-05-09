@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from "react";
-import useApi from "../utilities/apiComunicator";
-import HeaderFuncional from "../components/HeaderFuncional";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+"use client"
+
+import { useState, useEffect } from "react"
+import useApi from "../utilities/apiComunicator"
+import HeaderFuncional from "../components/HeaderFuncional"
+import { useNavigate } from "react-router-dom"
+import axios from "axios"
 export default function Inventario() {
-  const navigate = useNavigate();
-  const { data, loading, error, setUri, setError, setOptions } = useApi(
-    "api/producto",
-    {}
-  );
+  const navigate = useNavigate()
+  const { data, loading, error, setUri, setError, setOptions } = useApi("api/producto", {})
   const {
     data: dataCategoria,
     loading: loadingCategoria,
@@ -16,15 +15,15 @@ export default function Inventario() {
     setUri: uriCategoria,
     setError: setErrorCate,
     setOptions: setOptionsCate,
-  } = useApi("api/categoria", {});
-  const [parsedData, setParsedData] = useState([]);
-  const [categorias, setCategorias] = useState([]);
-  const [categoriaFiltro, setCategoriaFiltro] = useState("");
-  const [cantidadFiltro, setCantidadFiltro] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedFileName, setSelectedFileName] = useState("");
+  } = useApi("api/categoria", {})
+  const [parsedData, setParsedData] = useState([])
+  const [categorias, setCategorias] = useState([])
+  const [categoriaFiltro, setCategoriaFiltro] = useState("")
+  const [cantidadFiltro, setCantidadFiltro] = useState("")
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [selectedFileName, setSelectedFileName] = useState("")
 
   const [newProduct, setNewProduct] = useState({
     id_producto: "",
@@ -35,70 +34,64 @@ export default function Inventario() {
     estado: "activo",
     url_img: null,
     fecha_creacion: new Date().toISOString().split("T")[0],
-  });
+  })
 
-  const [paginaActiva, setPaginaActiva] = useState(1);
-  const [paginaDesactivada, setPaginaDesactivada] = useState(1);
-  const productosPorPagina = 3;
+  const [paginaActiva, setPaginaActiva] = useState(1)
+  const [paginaDesactivada, setPaginaDesactivada] = useState(1)
+  const productosPorPagina = 3
 
   useEffect(() => {
     if (!localStorage.getItem("authToken")) {
-      navigate("/");
+      navigate("/")
     }
-  }, [navigate]);
+  }, [navigate])
 
   useEffect(() => {
-    if (!data) return;
+    if (!data) return
 
     if (Array.isArray(data)) {
-      const productosOrdenados = data.sort(
-        (a, b) => a.nombre?.localeCompare(b.nombre) || 0
-      );
-      setParsedData(productosOrdenados);
+      const productosOrdenados = data.sort((a, b) => a.nombre?.localeCompare(b.nombre) || 0)
+      setParsedData(productosOrdenados)
     } else {
-      setError("Los datos no son válidos");
-      setParsedData([]);
+      setError("Los datos no son válidos")
+      setParsedData([])
     }
-  }, [data, setError]);
+  }, [data, setError])
 
   // Cargar todas las categorías directamente desde el endpoint
   useEffect(() => {
     if (Array.isArray(dataCategoria)) {
-      setCategorias(dataCategoria);
+      setCategorias(dataCategoria)
     }
-  }, [dataCategoria]);
+  }, [dataCategoria])
 
   const productosFiltrados = parsedData.filter((producto) => {
-    const categoriaValida = producto.categoria?.descripcion || "Sin categoría";
-    const cantidadValida = Number(producto.cantidad) || 0;
+    const categoriaValida = producto.categoria?.descripcion || "Sin categoría"
+    const cantidadValida = Number(producto.cantidad) || 0
     return (
       (categoriaFiltro === "" || categoriaValida === categoriaFiltro) &&
       (cantidadFiltro === "" || cantidadValida <= Number(cantidadFiltro))
-    );
-  });
+    )
+  })
 
-  const productosActivos = productosFiltrados.filter(
-    (p) => p.estado === "activo"
-  );
-  const productosDesactivados = productosFiltrados.filter(
-    (p) => p.estado === "desactivado"
-  );
+  const productosActivos = productosFiltrados.filter((p) => p.estado === "activo")
+  const productosDesactivados = productosFiltrados.filter((p) => p.estado === "desactivado")
 
-  const indiceInicioActivos = (paginaActiva - 1) * productosPorPagina;
+  const indiceInicioActivos = (paginaActiva - 1) * productosPorPagina
   const productosActivosPaginados = productosActivos.slice(
     indiceInicioActivos,
-    indiceInicioActivos + productosPorPagina
-  );
+    indiceInicioActivos + productosPorPagina,
+  )
 
-  const indiceInicioDesactivados = (paginaDesactivada - 1) * productosPorPagina;
+  const indiceInicioDesactivados = (paginaDesactivada - 1) * productosPorPagina
   const productosDesactivadosPaginados = productosDesactivados.slice(
     indiceInicioDesactivados,
-    indiceInicioDesactivados + productosPorPagina
-  );
+    indiceInicioDesactivados + productosPorPagina,
+  )
 
   const Paginacion = ({ total, actual, setActual }) => {
-    const totalPaginas = Math.ceil(total / productosPorPagina);
-    if (totalPaginas <= 1) return (<div className="flex justify-center items-center mt-12 gap-2 flex-wrap"></div>);
+    const totalPaginas = Math.ceil(total / productosPorPagina)
+    if (totalPaginas <= 1) return <div className="flex justify-center items-center mt-12 gap-2 flex-wrap"></div>
 
     return (
       <div className="flex justify-center items-center mt-4 gap-2 flex-wrap">
@@ -113,9 +106,7 @@ export default function Inventario() {
           <button
             key={i}
             onClick={() => setActual(i + 1)}
-            className={`px-3 py-1 rounded border ${
-              actual === i + 1 ? "bg-gray-600 text-white" : "bg-white"
-            }`}
+            className={`px-3 py-1 rounded border ${actual === i + 1 ? "bg-gray-600 text-white" : "bg-white"}`}
           >
             {i + 1}
           </button>
@@ -128,114 +119,117 @@ export default function Inventario() {
           Siguiente
         </button>
       </div>
-    );
-  };
+    )
+  }
 
   const handleModalClose = () => {
-    setIsModalOpen(false);
-    window.location.reload();
-  };
+    setIsModalOpen(false)
+    window.location.reload()
+  }
 
   const handleModalOpen = () => {
-    const sortedData = [...parsedData].sort(
-      (a, b) => Number(a.id_producto) - Number(b.id_producto)
-    );
-    const lastItem = sortedData[sortedData.length - 1];
-    const newId = lastItem ? Number(lastItem.id_producto) + 1 : 1;
+    const sortedData = [...parsedData].sort((a, b) => Number(a.id_producto) - Number(b.id_producto))
+    const lastItem = sortedData[sortedData.length - 1]
+    const newId = lastItem ? Number(lastItem.id_producto) + 1 : 1
 
     setNewProduct({
       id_producto: newId,
       nombre: "",
       cantidad: 0,
-      categoria: "",
+      categoria: { id: "", descripcion: "" },
       codigoQr: "",
       estado: "activo",
-      url_img: "",
-      fecha_creacion: new Date().toISOString().split("T")[0], // Fecha solo, sin hora
-    });
+      url_img: null,
+      fecha_creacion: new Date().toISOString().split("T")[0],
+    })
 
-    setIsEditing(false);
-    setSelectedFileName("");
-    setIsModalOpen(true);
-  };
+    setIsEditing(false)
+    setSelectedFileName("")
+    setIsModalOpen(true)
+  }
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files[0]
     if (file) {
-      setSelectedFileName(file.name);
+      setSelectedFileName(file.name)
       setNewProduct((prevState) => ({
         ...prevState,
         url_img: file,
-      }));
+      }))
     }
-  };
+  }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     if (name === "categoria") {
       setNewProduct((prevState) => ({
         ...prevState,
         categoria: { ...prevState.categoria, descripcion: value }, // Actualizar solo la descripcion
-      }));
+      }))
     } else {
       setNewProduct((prevState) => ({
         ...prevState,
         [name]: value,
-      }));
+      }))
     }
 
     // Mostrar sugerencias solo si se está escribiendo algo en la categoría
     if (value.trim() === "") {
-      setShowSuggestions(false);
+      setShowSuggestions(false)
     } else {
-      setShowSuggestions(true);
+      setShowSuggestions(true)
     }
-  };
+  }
 
+  // Modificar la función handleSaveProduct para recargar los productos después de editar
   const handleSaveProduct = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // destructuramos estado actual
-    let {
-      nombre,
-      cantidad,
-      categoria,
-      url_img,
-      estado,
-      fecha_creacion,
-      id_producto,
-    } = newProduct;
+    const { nombre, cantidad, categoria, url_img, estado, fecha_creacion, id_producto } = newProduct
 
     // validaciones
-    if (!nombre.trim()) return alert("El nombre del producto es obligatorio.");
-    if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0)
-      return alert("Cantidad no válida.");
-
-    // gestionar categoría nueva vs existente
-    let catSeleccionada = categoria;
-    if (categoria.id === -1) {
-      try {
-        const { data } = await axios.post(
-          "http://localhost:8080/api/categoria",
-          { id: null, descripcion: categoria.descripcion }
-        );
-        catSeleccionada = data;
-        // sincronizar state para mostrar el nuevo id
-        setNewProduct((p) => ({ ...p, categoria: data }));
-      } catch (err) {
-        console.error(err);
-        return alert("Error al crear la categoría.");
-      }
-    } else if (!categoria.id || isNaN(categoria.id)) {
-      return alert("El ID de la categoría no es válido.");
+    if (!nombre.trim()) {
+      alert("El nombre del producto es obligatorio.")
+      return
+    }
+    if (!cantidad || isNaN(cantidad) || Number(cantidad) < 0) {
+      alert("Cantidad no válida.")
+      return
     }
 
-    if (!estado) return alert("El estado es obligatorio.");
-    if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime()))
-      return alert("La fecha de creación no es válida.");
+    // gestionar categoría nueva vs existente
+    let catSeleccionada = categoria
+    if (categoria.id === -1) {
+      try {
+        const { data } = await axios.post("http://localhost:8080/api/categoria", {
+          id: null,
+          descripcion: categoria.descripcion,
+        })
+        catSeleccionada = data
+        // sincronizar state para mostrar el nuevo id
+        setNewProduct((p) => ({ ...p, categoria: data }))
+      } catch (err) {
+        console.error(err)
+        alert("Error al crear la categoría.")
+        return
+      }
+    } else if (!categoria.id && !categoria.descripcion) {
+      alert("Debes seleccionar o crear una categoría.")
+      return
+    }
+
+    if (!estado) {
+      alert("El estado es obligatorio.")
+      return
+    }
+    if (!fecha_creacion || isNaN(new Date(fecha_creacion).getTime())) {
+      alert("La fecha de creación no es válida.")
+      return
+    }
 
     // construimos objeto producto (sin imagen)
-    const fechaISO = new Date(fecha_creacion).toISOString();
+    const fechaISO = new Date(fecha_creacion).toISOString()
     const productoSinImagen = {
       id_producto: isEditing ? id_producto : null,
       nombre,
@@ -243,137 +237,128 @@ export default function Inventario() {
       id_categoria: catSeleccionada.id,
       estado,
       fecha_creacion: fechaISO,
-    };
+    }
 
     // preparamos FormData
-    const formData = new FormData();
-    // en edición, si no viene File, mantenemos url_img existente
-    if (isEditing) {
-      if (url_img instanceof File) {
-        formData.append("imagen", url_img);
-      } else if (newProduct.url_img) {
-        // mantenemos la propiedad en el objeto para el PUT
-        productoSinImagen.url_img = newProduct.url_img;
-      }
-    } else {
-      // en creación, obligamos a seleccionar archivo
-      if (!(url_img instanceof File)) {
-        return alert(
-          "Debes seleccionar una imagen para crear un nuevo producto."
-        );
-      }
-      formData.append("imagen", url_img);
+    const formData = new FormData()
+
+    // Manejar la imagen
+    if (url_img instanceof File) {
+      formData.append("imagen", url_img)
+    } else if (isEditing && typeof url_img === "string") {
+      // Si estamos editando y la URL es una cadena, mantener la URL existente
+      productoSinImagen.url_img = url_img
     }
+    // Si no hay imagen, no hacemos nada y el backend usará una imagen por defecto
 
     formData.append(
       "producto",
       new Blob([JSON.stringify(productoSinImagen)], {
         type: "application/json",
+      }),
+    )
+
+    try {
+      // enviamos la petición
+      const response = await fetch(`http://localhost:8080/api/producto`, {
+        method: isEditing ? "PUT" : "POST",
+        body: formData,
       })
-    );
 
-    // enviamos la petición
-    setOptions({
-      method: isEditing ? "PUT" : "POST",
-      body: formData,
-    });
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Error: ${errorText}`)
+      }
 
-    // actualizamos lista local
-    if (isEditing) {
-      setParsedData((prev) =>
-        prev.map((p) => (p.id_producto === id_producto ? productoSinImagen : p))
-      );
-    } else {
-      setParsedData((prev) => [...prev, productoSinImagen]);
+      // Cerrar modal y mostrar mensaje de éxito
+      alert(isEditing ? "Producto actualizado con éxito" : "Producto creado con éxito")
+      setIsModalOpen(false)
+
+      // Recargar los productos para mostrar los cambios
+      const productsResponse = await fetch("http://localhost:8080/api/producto")
+      if (productsResponse.ok) {
+        const productosActualizados = await productsResponse.json()
+        const productosOrdenados = productosActualizados.sort((a, b) => a.nombre?.localeCompare(b.nombre) || 0)
+        setParsedData(productosOrdenados)
+      }
+    } catch (error) {
+      console.error("Error al guardar el producto:", error)
+      alert(`Error al guardar el producto: ${error.message}`)
     }
-
-    // cerramos modal y limpiamos
-    setIsEditing(false);
-    setIsModalOpen(false);
-    setSelectedFileName("");
-  };
+  }
 
   const handleEditProduct = (producto) => {
     // Formatear la fecha para que no tenga la parte de la hora
-    const fechaSinHora = producto.fecha_creacion.split("T")[0]; // Esto deja solo la fecha
+    const fechaSinHora = producto.fecha_creacion.split("T")[0] // Esto deja solo la fecha
 
     setNewProduct({
       ...producto,
       fecha_creacion: fechaSinHora, // Aseguramos que solo tiene la fecha
-    });
+    })
 
-    setIsEditing(true);
-    setSelectedFileName(producto.url_img?.name || "");
-    setIsModalOpen(true);
-  };
+    setIsEditing(true)
+    setSelectedFileName(producto.url_img?.name || "")
+    setIsModalOpen(true)
+  }
 
-  const handleDeleteProduct = (id_producto) => {
-    const confirmDelete = window.confirm(
-      "¿Estás seguro de que deseas eliminar este producto?"
-    );
+  // Corregir la función handleDeleteProduct
+  const handleDeleteProduct = async (id_producto) => {
+    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?")
     if (confirmDelete) {
-      const token = localStorage.getItem("authToken"); // Obtener el token del localStorage
+      const token = localStorage.getItem("authToken")
 
       if (!token) {
-        alert(
-          "No tienes permiso para eliminar el producto. No se encontró el token."
-        );
-        return;
+        alert("No tienes permiso para eliminar el producto. No se encontró el token.")
+        return
       }
 
-      // Hacer la solicitud DELETE al backend con el token
-      fetch(`http://localhost:8080/api/producto/${id_producto}`, {
-        // Ahora usas id_producto
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`, // Añadir el token en los headers
-        },
-      })
-        .then((response) => {
-          if (response.ok) {
-            // Si la respuesta es exitosa, eliminar el producto de la lista local
-            setParsedData((prevData) =>
-              prevData.filter(
-                (producto) => producto.id_producto !== id_producto
-              )
-            ); // Filtras por id_producto
-            alert("Producto eliminado con éxito");
-          } else {
-            alert("Error al eliminar el producto");
-          }
+      try {
+        // Hacer la solicitud DELETE al backend con el token
+        const response = await fetch(`http://localhost:8080/api/producto/${id_producto}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         })
-        .catch((error) => {
-          console.error("Error al eliminar el producto:", error);
-          alert("Hubo un error al eliminar el producto");
-        });
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(`Error: ${errorText}`)
+        }
+
+        // Si la respuesta es exitosa, eliminar el producto de la lista local
+        setParsedData((prevData) => prevData.filter((producto) => producto.id_producto !== id_producto))
+        alert("Producto eliminado con éxito")
+      } catch (error) {
+        console.error("Error al eliminar el producto:", error)
+        alert(`Error al eliminar el producto: ${error.message}`)
+      }
     }
-  };
+  }
   const categoriasFiltradas = categorias.filter((cat) => {
     return (
       newProduct.categoria.descripcion &&
-      cat.descripcion
-        .toLowerCase()
-        .includes(newProduct.categoria.descripcion.toLowerCase())
-    );
-  });
+      cat.descripcion.toLowerCase().includes(newProduct.categoria.descripcion.toLowerCase())
+    )
+  })
 
-  const [isModalCategoriasOpen, setIsModalCategoriasOpen] = useState(false);
-  const [isEditCategoriaOpen, setIsEditCategoriaOpen] = useState(false);
-  const [selectedCategoria, setSelectedCategoria] = useState(null);
+  const [isModalCategoriasOpen, setIsModalCategoriasOpen] = useState(false)
+  const [isEditCategoriaOpen, setIsEditCategoriaOpen] = useState(false)
+  const [selectedCategoria, setSelectedCategoria] = useState(null)
 
   const handleModalOpenCategorias = () => {
-    setIsModalCategoriasOpen(true);
-  };
+    setIsModalCategoriasOpen(true)
+  }
 
   const handleCategoriaInputChange = (e) => {
-    const { name, value } = e.target;
-    setSelectedCategoria((prev) => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setSelectedCategoria((prev) => ({ ...prev, [name]: value }))
+  }
 
   const handleCategoriaSeleccionada = (categoria) => {
-    setSelectedCategoria({ ...categoria });
-    setIsEditCategoriaOpen(true);
-  };
+    setSelectedCategoria({ ...categoria })
+    setIsEditCategoriaOpen(true)
+  }
 
   const handleSaveCategoria = () => {
     fetch("http://localhost:8080/api/categoria", {
@@ -385,18 +370,18 @@ export default function Inventario() {
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Error en la solicitud");
+          throw new Error("Error en la solicitud")
         }
-        return response.json();
+        return response.json()
       })
       .then((data) => {
-        setIsEditCategoriaOpen(false);
-        setIsModalCategoriasOpen(false);
+        setIsEditCategoriaOpen(false)
+        setIsModalCategoriasOpen(false)
       })
       .catch((error) => {
-        console.error("Error al guardar la categoría:", error);
-      });
-  };
+        console.error("Error al guardar la categoría:", error)
+      })
+  }
 
   return (
     <>
@@ -435,15 +420,9 @@ export default function Inventario() {
 
       <div className="grid grid-cols-2 gap-5 mt-5 p-8">
         <div>
-          <h2 className="text-2xl font-medium text-center mb-4">
-            Productos Activos
-          </h2>
+          <h2 className="text-2xl font-medium text-center mb-4">Productos Activos</h2>
           <div className="mb-4">
-            <Paginacion
-              total={productosActivos.length}
-              actual={paginaActiva}
-              setActual={setPaginaActiva}
-            />
+            <Paginacion total={productosActivos.length} actual={paginaActiva} setActual={setPaginaActiva} />
           </div>
           {productosActivosPaginados.length === 0 ? (
             <p>No hay productos activos.</p>
@@ -454,21 +433,13 @@ export default function Inventario() {
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-green-50 p-4 mb-4 flex flex-col items-center"
               >
                 <div className="flex w-full justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-700">
-                    {producto.nombre}
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-700">{producto.nombre}</h3>
                   <div className="flex gap-2">
                     <button onClick={() => handleEditProduct(producto)}>
                       <img className="w-6 h-6" src="editar.png" alt="Editar" />
                     </button>
-                    <button
-                      onClick={() => handleDeleteProduct(producto.id_producto)}
-                    >
-                      <img
-                        className="w-6 h-6"
-                        src="eliminar.png"
-                        alt="Eliminar"
-                      />
+                    <button onClick={() => handleDeleteProduct(producto.id_producto)}>
+                      <img className="w-6 h-6" src="eliminar.png" alt="Eliminar" />
                     </button>
                   </div>
                 </div>
@@ -482,8 +453,7 @@ export default function Inventario() {
                   <strong>Cantidad:</strong> {producto.cantidad}
                 </p>
                 <p>
-                  <strong>Categoría:</strong>{" "}
-                  {producto.categoria?.descripcion || "Sin categoría"}
+                  <strong>Categoría:</strong> {producto.categoria?.descripcion || "Sin categoría"}
                 </p>
                 <p>
                   <strong>QR:</strong> {producto.codigoQr}
@@ -494,9 +464,7 @@ export default function Inventario() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-medium text-center mb-4">
-            Productos Desactivados
-          </h2>
+          <h2 className="text-2xl font-medium text-center mb-4">Productos Desactivados</h2>
           <div className="mb-4">
             <Paginacion
               total={productosDesactivados.length}
@@ -513,21 +481,13 @@ export default function Inventario() {
                 className="border border-gray-300 rounded-lg shadow-md text-center bg-red-50 p-4 mb-4 flex flex-col items-center"
               >
                 <div className="flex w-full justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-700">
-                    {producto.nombre}
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-700">{producto.nombre}</h3>
                   <div className="flex gap-2">
                     <button onClick={() => handleEditProduct(producto)}>
                       <img className="w-6 h-6" src="editar.png" alt="Editar" />
                     </button>
-                    <button
-                      onClick={() => handleDeleteProduct(producto.id_producto)}
-                    >
-                      <img
-                        className="w-6 h-6"
-                        src="eliminar.png"
-                        alt="Eliminar"
-                      />
+                    <button onClick={() => handleDeleteProduct(producto.id_producto)}>
+                      <img className="w-6 h-6" src="eliminar.png" alt="Eliminar" />
                     </button>
                   </div>
                 </div>
@@ -541,8 +501,7 @@ export default function Inventario() {
                   <strong>Cantidad:</strong> {producto.cantidad}
                 </p>
                 <p>
-                  <strong>Categoría:</strong>{" "}
-                  {producto.categoria?.descripcion || "Sin categoría"}
+                  <strong>Categoría:</strong> {producto.categoria?.descripcion || "Sin categoría"}
                 </p>
                 <p>
                   <strong>QR:</strong> {producto.codigoQr}
@@ -562,10 +521,7 @@ export default function Inventario() {
               {" "}
               {/* Aumento de altura */}
               {categorias.map((categoria) => (
-                <li
-                  key={categoria.id}
-                  className="flex justify-between items-center mb-2"
-                >
+                <li key={categoria.id} className="flex justify-between items-center mb-2">
                   <p>{categoria.descripcion}</p>
                   <button
                     onClick={() => handleCategoriaSeleccionada(categoria)}
@@ -614,16 +570,10 @@ export default function Inventario() {
               />
             </div>
             <div className="flex justify-between">
-              <button
-                onClick={() => setIsEditCategoriaOpen(false)}
-                className="bg-red-300 text-black px-4 py-2 rounded"
-              >
+              <button onClick={() => setIsEditCategoriaOpen(false)} className="bg-red-300 text-black px-4 py-2 rounded">
                 Cancelar
               </button>
-              <button
-                onClick={handleSaveCategoria}
-                className="bg-red-500 text-white px-4 py-2 rounded"
-              >
+              <button onClick={handleSaveCategoria} className="bg-red-500 text-white px-4 py-2 rounded">
                 Guardar Cambios
               </button>
             </div>
@@ -634,9 +584,7 @@ export default function Inventario() {
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg w-1/3">
-            <h3 className="text-2xl mb-4 text-center">
-              {isEditing ? "Editar Producto" : "Añadir Producto"}
-            </h3>
+            <h3 className="text-2xl mb-4 text-center">{isEditing ? "Editar Producto" : "Añadir Producto"}</h3>
             <form encType="multipart/form-data" onSubmit={handleSaveProduct}>
               <div className="mb-4">
                 <label className="block text-sm font-medium">ID</label>
@@ -679,9 +627,7 @@ export default function Inventario() {
                   >
                     Seleccionar archivo
                   </label>
-                  <span className="text-sm text-gray-600">
-                    {selectedFileName || "Ningún archivo seleccionado"}
-                  </span>
+                  <span className="text-sm text-gray-600">{selectedFileName || "Ningún archivo seleccionado"}</span>
                 </div>
                 <input
                   id="fileUpload"
@@ -702,9 +648,7 @@ export default function Inventario() {
                     id={newProduct.categoria.id}
                     onChange={handleInputChange}
                     onFocus={() => setShowSuggestions(true)}
-                    onBlur={() =>
-                      setTimeout(() => setShowSuggestions(false), 100)
-                    }
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
                     className="border p-2 rounded w-full"
                     placeholder="Escribe una categoría"
                     required
@@ -724,8 +668,8 @@ export default function Inventario() {
                                   descripcion: cat.descripcion,
                                   id: cat.id,
                                 },
-                              }));
-                              setShowSuggestions(false);
+                              }))
+                              setShowSuggestions(false)
                             }}
                             className="cursor-pointer px-2 py-1 hover:bg-gray-200"
                           >
@@ -736,13 +680,12 @@ export default function Inventario() {
                     ) : (
                       <ul className="absolute bg-white border w-full mt-1 max-h-40 overflow-auto z-10">
                         <li
-                          onClick={() => {setShowSuggestions(false);}}
+                          onClick={() => {
+                            setShowSuggestions(false)
+                          }}
                           className="cursor-pointer px-2 py-1 text-gree-600 hover:bg-gray-200"
                         >
-                          <p className="hidden">
-                            {" "}
-                            {(newProduct.categoria.id = -1)}
-                          </p>
+                          <p className="hidden"> {(newProduct.categoria.id = -1)}</p>
                           Se creara una nueva categoría
                         </li>
                       </ul>
@@ -764,9 +707,7 @@ export default function Inventario() {
                 </select>
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium">
-                  Fecha de Creación
-                </label>
+                <label className="block text-sm font-medium">Fecha de Creación</label>
                 <input
                   type="date"
                   name="fecha_creacion"
@@ -783,10 +724,7 @@ export default function Inventario() {
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  className="text-white bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded"
-                >
+                <button type="submit" className="text-white bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded">
                   {isEditing ? "Actualizar" : "Guardar"}
                 </button>
               </div>
@@ -795,5 +733,5 @@ export default function Inventario() {
         </div>
       )}
     </>
-  );
+  )
 }
