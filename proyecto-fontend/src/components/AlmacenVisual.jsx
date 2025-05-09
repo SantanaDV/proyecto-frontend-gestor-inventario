@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Grid, Grid3X3, Save, X, ChevronLeft, Warehouse, LayoutGrid, Package } from "lucide-react"
+import { Grid, Grid3X3, Save, X, ChevronLeft, Warehouse, LayoutGrid, Package } from 'lucide-react'
 import { ShelfModal } from "./shelf-modal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +35,11 @@ export default function WarehouseManager() {
   const [cellSize, setCellSize] = useState(80) // Cell size in pixels
   const [isMoving, setIsMoving] = useState(false) // Estado para controlar si se está moviendo una estantería
   const [products, setProducts] = useState([]) // Todos los productos
+
+  // Calcular la altura de la celda basada en el número de columnas
+  const getCellHeight = (columns) => {
+    return Math.max(60, Math.ceil(columns / 5) * 10 + 40)
+  }
 
   // Load data from API on component mount
   useEffect(() => {
@@ -723,15 +728,23 @@ export default function WarehouseManager() {
   const renderWarehouseGrid = () => {
     if (!warehouseSize) return null
 
+    const cellHeight = getCellHeight(warehouseSize.cols)
+
     return (
-      <div className="overflow-auto bg-gray-50 border rounded-lg shadow-inner h-[600px]">
-        <div className="relative w-full h-full">
+      <div className="bg-gray-50 border rounded-lg shadow-inner">
+        <div
+          className="relative"
+          style={{
+            width: "100%",
+            height: `${cellHeight * warehouseSize.rows}px`,
+          }}
+        >
           {showGrid && (
             <div
               className="absolute inset-0 grid"
               style={{
                 gridTemplateColumns: `repeat(${warehouseSize.cols}, 1fr)`,
-                gridTemplateRows: `repeat(${warehouseSize.rows}, 1fr)`,
+                gridTemplateRows: `repeat(${warehouseSize.rows}, ${cellHeight}px)`,
               }}
             >
               {Array.from({ length: warehouseSize.rows * warehouseSize.cols }).map((_, index) => {
@@ -757,16 +770,22 @@ export default function WarehouseManager() {
             const { row, col } = shelf.position
             const isHorizontal = shelf.orientation === "horizontal"
 
+            // Calcular posición exacta en píxeles
+            const left = (col / warehouseSize.cols) * 100
+            const top = (row / warehouseSize.rows) * 100
+            const width = (isHorizontal ? 2 : 1) * (100 / warehouseSize.cols)
+            const height = (isHorizontal ? 1 : 2) * (100 / warehouseSize.rows)
+
             return (
               <div
                 key={shelf.id}
                 className={`absolute flex flex-col items-center justify-center cursor-move rounded-md shadow-md transition-all duration-200 
-            ${isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
+                ${isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
                 style={{
-                  left: `calc(${(col / warehouseSize.cols) * 100}% + 1px)`,
-                  top: `calc(${(row / warehouseSize.rows) * 100}% + 1px)`,
-                  width: `calc(${isHorizontal ? 2 : 1} * (100% / ${warehouseSize.cols}) - 2px)`,
-                  height: `calc(${isHorizontal ? 1 : 2} * (100% / ${warehouseSize.rows}) - 2px)`,
+                  left: `${left}%`,
+                  top: `${top}%`,
+                  width: `calc(${width}% - 2px)`,
+                  height: `calc(${height}% - 2px)`,
                   zIndex: 10,
                 }}
                 draggable={!isMoving}
@@ -776,7 +795,7 @@ export default function WarehouseManager() {
                 data-shelf-id={shelf.id}
                 data-orientation={shelf.orientation}
               >
-                <div className="text-xs font-medium truncate px-1 text-center">{shelf.name}</div>
+                <div className="text-xs font-medium truncate px-1 text-center w-full">{shelf.name}</div>
                 <div className="flex items-center mt-1 bg-white text-black rounded-full px-2 py-0.5 text-[10px] font-semibold">
                   <Package className="h-3 w-3 mr-1" />
                   {shelf.productCount}
