@@ -761,7 +761,7 @@ export default function Tareas() {
                       <strong>Estado:</strong> {tarea.estado}
                     </p>
                     <p className="text-sm text-gray-600">
-                      <strong>Empleado Asignado:</strong> {tarea.empleado_asignado}
+                      <strong>Empleado Asignado:</strong> {empleadosData.find(e => String(e.id_usuario) === String(tarea.empleado_asignado))?.nombre || "No asignado"}
                     </p>
                     <p className="text-sm text-gray-600">
                       <strong>Categoría:</strong> {tarea.id_categoria}
