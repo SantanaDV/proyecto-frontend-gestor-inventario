@@ -82,6 +82,13 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, sea
   const completeProductAssignment = async () => {
     if (!selectedProduct || !baldaValue) return
 
+    // Validar que el número de balda sea mayor que 0
+    const baldaNumber = Number.parseInt(baldaValue)
+    if (baldaNumber <= 0) {
+      alert("El número de balda debe ser mayor que 0")
+      return
+    }
+
     setIsLoading(true)
     try {
       // Preparar el objeto producto con la estantería asignada y la balda
@@ -96,7 +103,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, sea
         nfc_id: selectedProduct.nfc_id,
         id_categoria: selectedProduct.categoria?.id || selectedProduct.id_categoria,
         id_estanteria: shelf.id,
-        balda: Number.parseInt(baldaValue),
+        balda: baldaNumber,
       }
 
       console.log("Enviando producto:", updatedProduct)
@@ -386,14 +393,21 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, sea
                   onChange={(e) => setBaldaValue(e.target.value)}
                   className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"
                   placeholder="Ingrese el número de balda"
+                  min="1"
                 />
+                {Number(baldaValue) <= 0 && baldaValue !== "" && (
+                  <p className="text-sm text-red-500 mt-1">El número de balda debe ser mayor que 0</p>
+                )}
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowBaldaModal(false)}>
                 Cancelar
               </Button>
-              <Button onClick={completeProductAssignment} disabled={!baldaValue || isLoading}>
+              <Button
+                onClick={completeProductAssignment}
+                disabled={!baldaValue || isLoading || Number(baldaValue) <= 0}
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Asignar
               </Button>
