@@ -4,13 +4,10 @@ import { useState, useEffect } from "react"
 import axios from "axios"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import AddEventDialog from "@/components/add-event-dialog"
 import HeaderFuncional from "@/components/HeaderFuncional"
 export default function Calendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [events, setEvents] = useState([])
-  const [isAddEventOpen, setIsAddEventOpen] = useState(false)
-  const [selectedDate, setSelectedDate] = useState(null)
 
   const daysOfWeek = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
@@ -132,21 +129,6 @@ export default function Calendar() {
     )
   }
 
-  const addEvent = (title, date) => {
-    const newEvent = {
-      id: Math.random().toString(36).substring(2, 9),
-      title,
-      date,
-    }
-    setEvents([...events, newEvent])
-    setIsAddEventOpen(false)
-  }
-
-  const handleDateClick = (date) => {
-    setSelectedDate(date)
-    setIsAddEventOpen(true)
-  }
-
   const getStatusColor = (estado) => {
     switch (estado) {
       case "Por hacer":
@@ -215,7 +197,7 @@ export default function Calendar() {
                 className={`border-b border-r p-1 relative ${
                   !day.isCurrentMonth ? "bg-gray-50 text-gray-400" : "hover:bg-gray-50 cursor-pointer"
                 } transition-colors duration-200`}
-                onClick={() => day.isCurrentMonth && handleDateClick(day.date)}
+                onClick={() => day.isCurrentMonth}
               >
                 <div className="flex flex-col h-full">
                   <div className={`flex items-start justify-between ${isTodayDay ? "mb-1" : ""}`}>
@@ -256,13 +238,6 @@ export default function Calendar() {
             )
           })}
         </div>
-
-        <AddEventDialog
-          isOpen={isAddEventOpen}
-          onClose={() => setIsAddEventOpen(false)}
-          onAddEvent={addEvent}
-          selectedDate={selectedDate}
-        />
       </div>
     </>
   )
