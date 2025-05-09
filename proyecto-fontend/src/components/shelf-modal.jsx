@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Package, Unlink } from "lucide-react"
+import { Loader2, Package, Unlink, Search } from "lucide-react"
 
-export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
+export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, searchQuery = "" }) {
   const [formData, setFormData] = useState({ ...shelf })
   const [isLoading, setIsLoading] = useState(false)
   const [products, setProducts] = useState([])
@@ -200,6 +200,22 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
     }
   }
 
+  // Función para verificar si un producto coincide con la búsqueda
+  const matchesSearch = (product) => {
+    if (!searchQuery || searchQuery.trim() === "") return false
+    return product.nombre?.toLowerCase().includes(searchQuery.toLowerCase())
+  }
+
+  // Ordenar productos para que los que coinciden con la búsqueda aparezcan primero
+  const sortedProducts = [...products].sort((a, b) => {
+    const aMatches = matchesSearch(a)
+    const bMatches = matchesSearch(b)
+
+    if (aMatches && !bMatches) return -1
+    if (!aMatches && bMatches) return 1
+    return 0
+  })
+
   return (
     <>
       <Dialog open={true} onOpenChange={onClose}>
@@ -245,32 +261,42 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints }) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {products.map((product) => (
-                        <TableRow key={product.id_producto}>
-                          <TableCell className="font-medium">{product.nombre}</TableCell>
-                          <TableCell>{product.cantidad}</TableCell>
-                          <TableCell>
-                            <Badge variant={product.estado === "activo" ? "success" : "secondary"}>
-                              {product.estado}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{product.categoria?.descripcion}</TableCell>
-                          <TableCell>{product.balda}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleUnassignProduct(product.id_producto)}
-                                className="flex items-center"
-                              >
-                                <Unlink className="h-4 w-4 mr-1" />
-                                Desasignar
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {sortedProducts.map((product) => {
+                        const isHighlighted = matchesSearch(product)
+                        return (
+                          <TableRow key={product.id_producto} className={isHighlighted ? "bg-purple-100" : ""}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center">
+                                {isHighlighted && <Search className="h-4 w-4 mr-1 text-purple-600" />}
+                                <span className={isHighlighted ? "text-purple-700 font-bold" : ""}>
+                                  {product.nombre}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{product.cantidad}</TableCell>
+                            <TableCell>
+                              <Badge variant={product.estado === "activo" ? "success" : "secondary"}>
+                                {product.estado}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{product.categoria?.descripcion}</TableCell>
+                            <TableCell>{product.balda}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleUnassignProduct(product.id_producto)}
+                                  className="flex items-center"
+                                >
+                                  <Unlink className="h-4 w-4 mr-1" />
+                                  Desasignar
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
                     </TableBody>
                   </Table>
                 </div>

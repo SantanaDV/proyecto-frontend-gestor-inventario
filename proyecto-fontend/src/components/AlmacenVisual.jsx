@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Grid, Grid3X3, Save, X, ChevronLeft, Warehouse, LayoutGrid, Package } from 'lucide-react'
+import { Grid, Grid3X3, Save, X, ChevronLeft, Warehouse, LayoutGrid, Package } from "lucide-react"
 import { ShelfModal } from "./shelf-modal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +35,8 @@ export default function WarehouseManager() {
   const [cellSize, setCellSize] = useState(80) // Cell size in pixels
   const [isMoving, setIsMoving] = useState(false) // Estado para controlar si se está moviendo una estantería
   const [products, setProducts] = useState([]) // Todos los productos
+  const [searchQuery, setSearchQuery] = useState("")
+  const [highlightedShelfIds, setHighlightedShelfIds] = useState([])
 
   // Calcular la altura de la celda basada en el número de columnas
   const getCellHeight = (columns) => {
@@ -164,6 +166,47 @@ export default function WarehouseManager() {
 
     setShelves(updatedShelves)
   }
+
+  // Search for products and highlight shelves
+  const searchProduct = async () => {
+    if (!searchQuery.trim()) {
+      setHighlightedShelfIds([])
+      return
+    }
+
+    try {
+      const response = await fetch(API_ENDPOINTS.PRODUCT)
+      if (response.ok) {
+        const productsData = await response.json()
+
+        // Filter products that match the search query
+        const matchingProducts = productsData.filter((product) =>
+          product.nombre?.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+
+        // Get unique shelf IDs from matching products
+        const shelfIds = matchingProducts
+          .filter((product) => product.estanteria && product.estanteria.id_estanteria)
+          .map((product) => product.estanteria.id_estanteria)
+
+        // Remove duplicates
+        const uniqueShelfIds = [...new Set(shelfIds)]
+
+        setHighlightedShelfIds(uniqueShelfIds)
+      }
+    } catch (error) {
+      console.error("Error searching for products", error)
+    }
+  }
+
+  // Update search results as user types
+  useEffect(() => {
+    const delaySearch = setTimeout(() => {
+      searchProduct()
+    }, 300) // Pequeño retraso para evitar demasiadas búsquedas mientras se escribe
+
+    return () => clearTimeout(delaySearch)
+  }, [searchQuery])
 
   // Create a new warehouse
   const createWarehouse = async () => {
@@ -780,7 +823,7 @@ export default function WarehouseManager() {
               <div
                 key={shelf.id}
                 className={`absolute flex flex-col items-center justify-center cursor-move rounded-md shadow-md transition-all duration-200 
-                ${isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
+                ${highlightedShelfIds.includes(shelf.id) ? "bg-purple-600" : isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
                 style={{
                   left: `${left}%`,
                   top: `${top}%`,
@@ -986,6 +1029,25 @@ export default function WarehouseManager() {
                 </TooltipProvider>
               </div>
 
+              <div className="mt-4 mb-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Buscar producto..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="max-w-xs"
+                  />
+                </div>
+                {highlightedShelfIds.length > 0 && (
+                  <p className="text-sm mt-2">
+                    {highlightedShelfIds.length === 1
+                      ? "Producto encontrado en la estantería resaltada en "
+                      : `Productos encontrados en ${highlightedShelfIds.length} estanterías resaltadas en `}
+                    <span className="text-purple-600 font-bold">morado</span>
+                  </p>
+                )}
+              </div>
+
               <div className="bg-white rounded-lg p-4 border">
                 <div className="mb-4">
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">
@@ -1007,6 +1069,7 @@ export default function WarehouseManager() {
           onSave={saveShelf}
           onDelete={() => deleteShelf(selectedShelf.id)}
           apiEndpoints={API_ENDPOINTS}
+          searchQuery={searchQuery}
         />
       )}
     </div>
