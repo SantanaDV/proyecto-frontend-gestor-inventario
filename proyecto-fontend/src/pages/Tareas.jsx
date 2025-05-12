@@ -251,7 +251,8 @@ export default function Tareas() {
     }
   };
 
-  const handleSaveCategoria = () => {};
+  const handleSaveCategoria = () => {
+  };
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -900,13 +901,13 @@ export default function Tareas() {
                           (e) =>
                             String(e.id_usuario) ===
                             String(tarea.empleado_asignado)
-                        )?.nombre || "No asignado"}
+                        )?.nombre || "Sin asignar"}
                       </p>
                       <p className="text-sm text-gray-600">
                         <strong>Categoría:</strong>{" "}
                         {categorias.find(
                           (cat) => String(cat.id) === String(tarea.id_categoria)
-                        )?.descripcion || "No asignada"}
+                        )?.descripcion || "Sin asignar"}
                       </p>
                       <p className="text-sm text-gray-600">
                         <strong>Fecha de Asignación:</strong>{" "}
