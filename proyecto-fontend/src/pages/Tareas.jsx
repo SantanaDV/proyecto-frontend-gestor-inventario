@@ -168,18 +168,12 @@ export default function Tareas() {
 
   // Maneja cambios en el input: actualiza texto y resetea la categoría seleccionada
   const handleCategoriaInputChange = (event) => {
-    const value = event.target.value;
-    setCategoriaInput(value);
-    // Al cambiar el texto, eliminamos la categoría seleccionada previa
-    setNewTask((prev) => ({ ...prev, id_categoria: "" }));
-    setShowSuggestions(true);
-
-    // Filtrar categorías que coincidan con el texto ingresado
-    const filtradas = categorias.filter((c) =>
-      c.descripcion.toLowerCase().includes(value.toLowerCase())
-    );
-    setCategoriasFiltradas(filtradas);
-  };
+  const { name, value } = event.target;
+  setSelectedCategoria((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
 
   // Cuando el usuario selecciona una categoría de la lista
   const handleCategoriaSelect = (categoriaObj) => {
@@ -251,8 +245,42 @@ export default function Tareas() {
     }
   };
 
-  const handleSaveCategoria = () => {
-  };
+  const handleSaveCategoria = async () => {
+  try {
+    const response = await fetch(
+      `http://localhost:8080/api/categoriatarea/${selectedCategoria.id}`,
+      {
+        method: "PUT", // asegúrate que el backend lo acepte
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          descripcion: selectedCategoria.descripcion,
+        }),
+      }
+    );
+
+    console.log("Response status:", response.status); // <-- Añade esto
+    const text = await response.text();               // <-- Captura respuesta cruda
+    console.log("Response text:", text);              // <-- Para ver si hay más info
+
+    if (!response.ok) {
+      throw new Error("Error al guardar la categoría");
+    }
+
+    const categoriaActualizada = JSON.parse(text);
+
+    const nuevasCategorias = categorias.map((cat) =>
+      cat.id === selectedCategoria.id ? categoriaActualizada : cat
+    );
+    setCategorias(nuevasCategorias);
+    setIsEditCategoriaOpen(false);
+  } catch (error) {
+    console.error("Error al guardar en la base de datos:", error);
+    alert("No se pudo guardar la categoría. Intenta de nuevo.");
+  }
+};
+
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
