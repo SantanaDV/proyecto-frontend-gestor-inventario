@@ -1,21 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import useApi from "../utilities/apiComunicator"
-import HeaderFuncional from "../components/HeaderFuncional"
 import { useNavigate } from "react-router-dom"
+import HeaderFuncional from "../components/HeaderFuncional"
 import axios from "axios"
 export default function Inventario() {
   const navigate = useNavigate()
-  const { data, loading, error, setUri, setError, setOptions } = useApi("api/producto", {})
-  const {
-    data: dataCategoria,
-    loading: loadingCategoria,
-    error: errorCategoria,
-    setUri: uriCategoria,
-    setError: setErrorCate,
-    setOptions: setOptionsCate,
-  } = useApi("api/categoria", {})
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [dataCategoria, setDataCategoria] = useState([])
+  const [loadingCategoria, setLoadingCategoria] = useState(true)
+  const [errorCategoria, setErrorCategoria] = useState(null)
   const [parsedData, setParsedData] = useState([])
   const [categorias, setCategorias] = useState([])
   const [categoriaFiltro, setCategoriaFiltro] = useState("")
@@ -40,30 +36,56 @@ export default function Inventario() {
   const [paginaDesactivada, setPaginaDesactivada] = useState(1)
   const productosPorPagina = 3
 
+  // Añadir estos estados después de los otros estados
+  const [shouldRefreshProducts, setShouldRefreshProducts] = useState(0)
+  const [shouldRefreshCategories, setShouldRefreshCategories] = useState(0)
+
+  // Función para cargar productos
+  const fetchProductos = async () => {
+    try {
+      setLoading(true)
+      const response = await axios.get("http://localhost:8080/api/producto")
+      const productosOrdenados = response.data.sort((a, b) => a.nombre?.localeCompare(b.nombre) || 0)
+      setData(response.data)
+      setParsedData(productosOrdenados)
+      setLoading(false)
+    } catch (err) {
+      console.error("Error al cargar productos:", err)
+      setError("Error al cargar productos")
+      setLoading(false)
+    }
+  }
+
+  // Función para cargar categorías
+  const fetchCategorias = async () => {
+    try {
+      setLoadingCategoria(true)
+      const response = await axios.get("http://localhost:8080/api/categoria")
+      setDataCategoria(response.data)
+      setCategorias(response.data)
+      setLoadingCategoria(false)
+    } catch (err) {
+      console.error("Error al cargar categorías:", err)
+      setErrorCategoria("Error al cargar categorías")
+      setLoadingCategoria(false)
+    }
+  }
+
+  // Reemplazar el useEffect que carga los datos iniciales
   useEffect(() => {
     if (!localStorage.getItem("authToken")) {
       navigate("/")
     }
   }, [navigate])
 
-  useEffect(() => {
-    if (!data) return
+  // Añadir estos useEffect para cargar productos y categorías
+  
 
-    if (Array.isArray(data)) {
-      const productosOrdenados = data.sort((a, b) => a.nombre?.localeCompare(b.nombre) || 0)
-      setParsedData(productosOrdenados)
-    } else {
-      setError("Los datos no son válidos")
-      setParsedData([])
-    }
-  }, [data, setError])
-
-  // Cargar todas las categorías directamente desde el endpoint
   useEffect(() => {
-    if (Array.isArray(dataCategoria)) {
-      setCategorias(dataCategoria)
+    if (localStorage.getItem("authToken")) {
+      fetchCategorias()
     }
-  }, [dataCategoria])
+  }, [shouldRefreshCategories])
 
   const productosFiltrados = parsedData.filter((producto) => {
     const categoriaValida = producto.categoria?.descripcion || "Sin categoría"
@@ -124,7 +146,7 @@ export default function Inventario() {
 
   const handleModalClose = () => {
     setIsModalOpen(false)
-    window.location.reload()
+    setShouldRefreshProducts((prev) => prev + 1) // Incrementar para forzar la recarga
   }
 
   const handleModalOpen = () => {
@@ -181,7 +203,6 @@ export default function Inventario() {
     }
   }
 
-  // Modificar la función handleSaveProduct para recargar los productos después de editar
   const handleSaveProduct = async (e) => {
     e.preventDefault()
 
@@ -209,6 +230,8 @@ export default function Inventario() {
         catSeleccionada = data
         // sincronizar state para mostrar el nuevo id
         setNewProduct((p) => ({ ...p, categoria: data }))
+        // Recargar categorías después de crear una nueva
+        //fetchCategorias()
       } catch (err) {
         console.error(err)
         alert("Error al crear la categoría.")
@@ -259,31 +282,30 @@ export default function Inventario() {
     )
 
     try {
-      // enviamos la petición
-      const response = await fetch(`http://localhost:8080/api/producto`, {
-        method: isEditing ? "PUT" : "POST",
-        body: formData,
+      // enviamos la petición con axios
+      const method = isEditing ? "put" : "post"
+      const response = await axios({
+        method,
+        url: "http://localhost:8080/api/producto",
+        data: formData,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       })
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Error: ${errorText}`)
-      }
-
+      // Dentro de handleSaveProduct, reemplazar las llamadas a fetchProductos y fetchCategorias
       // Cerrar modal y mostrar mensaje de éxito
       alert(isEditing ? "Producto actualizado con éxito" : "Producto creado con éxito")
       setIsModalOpen(false)
 
-      // Recargar los productos para mostrar los cambios
-      const productsResponse = await fetch("http://localhost:8080/api/producto")
-      if (productsResponse.ok) {
-        const productosActualizados = await productsResponse.json()
-        const productosOrdenados = productosActualizados.sort((a, b) => a.nombre?.localeCompare(b.nombre) || 0)
-        setParsedData(productosOrdenados)
+      // Recargar los productos y categorías para mostrar los cambios
+      setShouldRefreshProducts((prev) => prev + 1)
+      if (categoria.id === -1) {
+        setShouldRefreshCategories((prev) => prev + 1)
       }
     } catch (error) {
       console.error("Error al guardar el producto:", error)
-      alert(`Error al guardar el producto: ${error.message}`)
+      alert(`Error al guardar el producto: ${error.response?.data || error.message}`)
     }
   }
 
@@ -313,25 +335,20 @@ export default function Inventario() {
       }
 
       try {
-        // Hacer la solicitud DELETE al backend con el token
-        const response = await fetch(`http://localhost:8080/api/producto/${id_producto}`, {
-          method: "DELETE",
+        // Hacer la solicitud DELETE al backend con axios
+        await axios.delete(`http://localhost:8080/api/producto/${id_producto}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(`Error: ${errorText}`)
-        }
-
-        // Si la respuesta es exitosa, eliminar el producto de la lista local
-        setParsedData((prevData) => prevData.filter((producto) => producto.id_producto !== id_producto))
+        // Dentro de handleDeleteProduct, reemplazar la llamada a fetchProductos
+        // Recargar productos después de eliminar
+        setShouldRefreshProducts((prev) => prev + 1)
         alert("Producto eliminado con éxito")
       } catch (error) {
         console.error("Error al eliminar el producto:", error)
-        alert(`Error al eliminar el producto: ${error.message}`)
+        alert(`Error al eliminar el producto: ${error.response?.data || error.message}`)
       }
     }
   }
@@ -360,28 +377,32 @@ export default function Inventario() {
     setIsEditCategoriaOpen(true)
   }
 
-  const handleSaveCategoria = () => {
-    fetch("http://localhost:8080/api/categoria", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(selectedCategoria),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Error en la solicitud")
-        }
-        return response.json()
+  const handleSaveCategoria = async () => {
+    try {
+      await axios.put("http://localhost:8080/api/categoria", selectedCategoria, {
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
-      .then((data) => {
-        setIsEditCategoriaOpen(false)
-        setIsModalCategoriasOpen(false)
-      })
-      .catch((error) => {
-        console.error("Error al guardar la categoría:", error)
-      })
+
+      // Dentro de handleSaveCategoria, reemplazar la llamada a fetchCategorias
+      // Recargar categorías después de actualizar
+      setShouldRefreshCategories((prev) => prev + 1)
+      setIsEditCategoriaOpen(false)
+      setIsModalCategoriasOpen(false)
+    } catch (error) {
+      console.error("Error al guardar la categoría:", error)
+      alert(`Error al guardar la categoría: ${error.response?.data || error.message}`)
+    }
   }
+
+
+  useEffect(() => {
+    if (localStorage.getItem("authToken")) {
+      fetchProductos()
+    }
+  }, [shouldRefreshProducts,isModalOpen,isModalCategoriasOpen])
+
 
   return (
     <>
