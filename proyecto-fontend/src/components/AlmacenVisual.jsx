@@ -888,7 +888,7 @@ export default function WarehouseManager() {
               return (
                 <div
                   key={shelf.id}
-                  className={`absolute flex flex-col items-center justify-center cursor-move rounded-md shadow-md transition-all duration-200 
+                  className={`absolute flex flex-col items-center justify-center ${!isDoor ? "cursor-move" : "cursor-default"} rounded-md shadow-md transition-all duration-200 
                   ${highlightedShelfIds.includes(shelf.id) ? "bg-purple-600" : isDoor ? "" : isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
                   style={{
                     left: `${left}%`,
@@ -915,7 +915,7 @@ export default function WarehouseManager() {
                   draggable={!isMoving}
                   onDragStart={(e) => onDragStart(e, shelf)}
                   onDragEnd={onDragEnd}
-                  onClick={() => openShelfModal(shelf)}
+                  onClick={() => !isDoor && openShelfModal(shelf)}
                   data-shelf-id={shelf.id}
                   data-orientation={shelf.orientation}
                   data-is-door={isDoor}
