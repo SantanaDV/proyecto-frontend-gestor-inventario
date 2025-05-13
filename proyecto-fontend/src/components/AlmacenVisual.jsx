@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Grid, Grid3X3, Save, X, ChevronLeft, Warehouse, LayoutGrid, Package } from "lucide-react"
+import { Grid, Grid3X3, Save, X, ChevronLeft, Warehouse, LayoutGrid, Package, RotateCcw } from "lucide-react"
 import { ShelfModal } from "./shelf-modal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,6 +17,9 @@ const API_ENDPOINTS = {
   SHELF: "http://127.0.0.1:8080/api/estanteria",
   PRODUCT: "http://127.0.0.1:8080/api/producto",
 }
+
+// Door background image
+const DOOR_IMAGE = "door.png"
 
 export default function WarehouseManager() {
   // State
@@ -37,6 +40,7 @@ export default function WarehouseManager() {
   const [products, setProducts] = useState([]) // Todos los productos
   const [searchQuery, setSearchQuery] = useState("")
   const [highlightedShelfIds, setHighlightedShelfIds] = useState([])
+  const [warehouseRotation, setWarehouseRotation] = useState(0)
 
   // Calcular la altura de la celda basada en el número de columnas
   const getCellHeight = (columns) => {
@@ -75,15 +79,20 @@ export default function WarehouseManager() {
             if (shelfResponse.ok) {
               const shelfData = await shelfResponse.json()
               const formattedShelves = shelfData.map((shelf) => {
-                // Parsear la posición que viene como "0,1" a {row: 0, col: 1}
-                const [row, col] = shelf.posicion.split(",").map(Number)
+                // Verificar si es una puerta (posición termina en 'p')
+                const isDoor = shelf.posicion.includes("p")
+                // Extraer la posición sin la 'p' para el renderizado
+                const posString = isDoor ? shelf.posicion.replace("p", "") : shelf.posicion
+                const [row, col] = posString.split(",").map(Number)
+
                 return {
                   id: shelf.id_estanteria,
-                  name: `Estantería ${shelf.id_estanteria}`,
+                  name: isDoor ? `Puerta ${shelf.id_estanteria}` : `Estantería ${shelf.id_estanteria}`,
                   orientation: shelf.orientacion.toLowerCase(), // Asegurar que esté en minúsculas
                   position: { row, col },
                   products: [],
                   productCount: 0,
+                  isDoor: isDoor,
                 }
               })
               setShelves(formattedShelves)
@@ -272,15 +281,20 @@ export default function WarehouseManager() {
       if (response.ok) {
         const shelfData = await response.json()
         const formattedShelves = shelfData.map((shelf) => {
-          // Parsear la posición que viene como "0,1" a {row: 0, col: 1}
-          const [row, col] = shelf.posicion.split(",").map(Number)
+          // Verificar si es una puerta (posición termina en 'p')
+          const isDoor = shelf.posicion.includes("p")
+          // Extraer la posición sin la 'p' para el renderizado
+          const posString = isDoor ? shelf.posicion.replace("p", "") : shelf.posicion
+          const [row, col] = posString.split(",").map(Number)
+
           return {
             id: shelf.id_estanteria,
-            name: `Estantería ${shelf.id_estanteria}`,
-            orientation: shelf.orientacion.toLowerCase(), // Asegurar que esté en minúsculas
+            name: isDoor ? `Puerta ${shelf.id_estanteria}` : `Estantería ${shelf.id_estanteria}`,
+            orientation: shelf.orientacion.toLowerCase(),
             position: { row, col },
-            products: [], // Inicialmente vacío, se cargarán después
+            products: [],
             productCount: 0,
+            isDoor: isDoor,
           }
         })
         setShelves(formattedShelves)
@@ -369,8 +383,14 @@ export default function WarehouseManager() {
   }
 
   // Add a shelf
-  const addShelf = async (orientation) => {
+  const addShelf = async (orientation, isDoor = false) => {
     if (!warehouseSize || !selectedWarehouse) return
+
+    // Ensure doors are only vertical
+    if (isDoor && orientation !== "vertical") {
+      alert("Las puertas solo pueden ser verticales.")
+      return
+    }
 
     let found = false
     let newRow = 0
@@ -411,10 +431,13 @@ export default function WarehouseManager() {
 
     try {
       // Formato correcto para POST de estantería
+      // Añadir 'p' al final de la posición si es una puerta
+      const positionString = isDoor ? `${newRow},${newCol}p` : `${newRow},${newCol}`
+
       const newShelfData = {
         id_estanteria: null, // Null para que se genere automáticamente
         id_almacen: selectedWarehouse.id,
-        posicion: `${newRow},${newCol}`,
+        posicion: positionString,
         orientacion: orientation.charAt(0).toUpperCase() + orientation.slice(1), // Capitalizar primera letra
       }
 
@@ -432,13 +455,23 @@ export default function WarehouseManager() {
         const createdShelf = await response.json()
         console.log("Estantería creada:", createdShelf)
 
+        // Extraer la posición sin la 'p' para el renderizado
+        let posRow = newRow
+        let posCol = newCol
+        if (isDoor && createdShelf.posicion.includes("p")) {
+          const posParts = createdShelf.posicion.replace("p", "").split(",")
+          posRow = Number.parseInt(posParts[0])
+          posCol = Number.parseInt(posParts[1])
+        }
+
         const formattedShelf = {
           id: createdShelf.id_estanteria,
-          name: `Estantería ${createdShelf.id_estanteria}`,
+          name: isDoor ? `Puerta ${createdShelf.id_estanteria}` : `Estantería ${createdShelf.id_estanteria}`,
           orientation: createdShelf.orientacion.toLowerCase(), // Convertir a minúsculas para mantener consistencia
-          position: { row: newRow, col: newCol },
+          position: { row: posRow, col: posCol },
           products: [],
           productCount: 0,
+          isDoor: isDoor, // Añadir propiedad para identificar puertas
         }
 
         setShelves([...shelves, formattedShelf])
@@ -476,11 +509,14 @@ export default function WarehouseManager() {
       )
       setShelves(updatedShelves)
 
+      // Añadir 'p' al final de la posición si es una puerta
+      const positionString = currentShelf.isDoor ? `${newRow},${newCol}p` : `${newRow},${newCol}`
+
       // Formato correcto para PUT de estantería
       const updateData = {
         id_estanteria: Number.parseInt(id), // Asegurarse de que sea un número
         id_almacen: Number.parseInt(selectedWarehouse.id), // Asegurarse de que sea un número
-        posicion: `${newRow},${newCol}`,
+        posicion: positionString,
         orientacion: currentShelf.orientation.charAt(0).toUpperCase() + currentShelf.orientation.slice(1), // Capitalizar primera letra
       }
 
@@ -512,14 +548,20 @@ export default function WarehouseManager() {
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json()
           const refreshedShelves = refreshData.map((shelf) => {
-            const [row, col] = shelf.posicion.split(",").map(Number)
+            // Verificar si es una puerta (posición termina en 'p')
+            const isDoor = shelf.posicion.includes("p")
+            // Extraer la posición sin la 'p' para el renderizado
+            const posString = isDoor ? shelf.posicion.replace("p", "") : shelf.posicion
+            const [row, col] = posString.split(",").map(Number)
+
             return {
               id: shelf.id_estanteria,
-              name: `Estantería ${shelf.id_estanteria}`,
+              name: isDoor ? `Puerta ${shelf.id_estanteria}` : `Estantería ${shelf.id_estanteria}`,
               orientation: shelf.orientacion.toLowerCase(),
               position: { row, col },
               products: currentShelf.products || [],
               productCount: currentShelf.productCount || 0,
+              isDoor: isDoor,
             }
           })
           setShelves(refreshedShelves)
@@ -773,79 +815,124 @@ export default function WarehouseManager() {
 
     const cellHeight = getCellHeight(warehouseSize.cols)
 
+    // Calculate container size adjustments for rotation
+    const isRotated = warehouseRotation % 180 !== 0
+    const containerStyle = isRotated
+      ? {
+          height: `${cellHeight * warehouseSize.rows}px`,
+          width: `${cellHeight * warehouseSize.rows}px`,
+          margin: "0 auto",
+        }
+      : {
+          height: `${cellHeight * warehouseSize.rows}px`,
+          width: "100%",
+        }
+
     return (
-      <div className="bg-gray-50 border rounded-lg shadow-inner">
+      <div className="bg-gray-50 border rounded-lg shadow-inner overflow-hidden">
+        {/* Wrapper div for rotation */}
         <div
-          className="relative"
+          className="flex items-center justify-center"
           style={{
-            width: "100%",
-            height: `${cellHeight * warehouseSize.rows}px`,
+            ...containerStyle,
+            transition: "all 0.5s ease",
           }}
         >
-          {showGrid && (
-            <div
-              className="absolute inset-0 grid"
-              style={{
-                gridTemplateColumns: `repeat(${warehouseSize.cols}, 1fr)`,
-                gridTemplateRows: `repeat(${warehouseSize.rows}, ${cellHeight}px)`,
-              }}
-            >
-              {Array.from({ length: warehouseSize.rows * warehouseSize.cols }).map((_, index) => {
-                const row = Math.floor(index / warehouseSize.cols)
-                const col = index % warehouseSize.cols
-                return (
-                  <div
-                    key={index}
-                    className="border border-gray-200 transition-colors duration-200"
-                    onDragOver={onDragOver}
-                    onDragLeave={onDragLeave}
-                    onDrop={(e) => onDrop(e, row, col)}
-                    data-row={row}
-                    data-col={col}
-                  />
-                )
-              })}
-            </div>
-          )}
-
-          {/* Estanterías posicionadas */}
-          {shelves.map((shelf) => {
-            const { row, col } = shelf.position
-            const isHorizontal = shelf.orientation === "horizontal"
-
-            // Calcular posición exacta en píxeles
-            const left = (col / warehouseSize.cols) * 100
-            const top = (row / warehouseSize.rows) * 100
-            const width = (isHorizontal ? 2 : 1) * (100 / warehouseSize.cols)
-            const height = (isHorizontal ? 1 : 2) * (100 / warehouseSize.rows)
-
-            return (
+          <div
+            className="relative"
+            style={{
+              width: isRotated ? `${cellHeight * warehouseSize.cols}px` : "100%",
+              height: `${cellHeight * warehouseSize.rows}px`,
+              transform: `rotate(${warehouseRotation}deg)`,
+              transition: "transform 0.5s ease",
+            }}
+          >
+            {showGrid && (
               <div
-                key={shelf.id}
-                className={`absolute flex flex-col items-center justify-center cursor-move rounded-md shadow-md transition-all duration-200 
-                ${highlightedShelfIds.includes(shelf.id) ? "bg-purple-600" : isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
+                className="absolute inset-0 grid"
                 style={{
-                  left: `${left}%`,
-                  top: `${top}%`,
-                  width: `calc(${width}% - 2px)`,
-                  height: `calc(${height}% - 2px)`,
-                  zIndex: 10,
+                  gridTemplateColumns: `repeat(${warehouseSize.cols}, 1fr)`,
+                  gridTemplateRows: `repeat(${warehouseSize.rows}, ${cellHeight}px)`,
                 }}
-                draggable={!isMoving}
-                onDragStart={(e) => onDragStart(e, shelf)}
-                onDragEnd={onDragEnd}
-                onClick={() => openShelfModal(shelf)}
-                data-shelf-id={shelf.id}
-                data-orientation={shelf.orientation}
               >
-                <div className="text-xs font-medium truncate px-1 text-center w-full">{shelf.name}</div>
-                <div className="flex items-center mt-1 bg-white text-black rounded-full px-2 py-0.5 text-[10px] font-semibold">
-                  <Package className="h-3 w-3 mr-1" />
-                  {shelf.productCount}
-                </div>
+                {Array.from({ length: warehouseSize.rows * warehouseSize.cols }).map((_, index) => {
+                  const row = Math.floor(index / warehouseSize.cols)
+                  const col = index % warehouseSize.cols
+                  return (
+                    <div
+                      key={index}
+                      className="border border-gray-200 transition-colors duration-200"
+                      onDragOver={onDragOver}
+                      onDragLeave={onDragLeave}
+                      onDrop={(e) => onDrop(e, row, col)}
+                      data-row={row}
+                      data-col={col}
+                    />
+                  )
+                })}
               </div>
-            )
-          })}
+            )}
+
+            {/* Estanterías posicionadas */}
+            {shelves.map((shelf) => {
+              const { row, col } = shelf.position
+              const isHorizontal = shelf.orientation === "horizontal"
+              const isDoor = shelf.isDoor
+
+              // Calcular posición exacta en píxeles
+              const left = (col / warehouseSize.cols) * 100
+              const top = (row / warehouseSize.rows) * 100
+              const width = (isHorizontal ? 2 : 1) * (100 / warehouseSize.cols)
+              const height = (isHorizontal ? 1 : 2) * (100 / warehouseSize.rows)
+
+              return (
+                <div
+                  key={shelf.id}
+                  className={`absolute flex flex-col items-center justify-center cursor-move rounded-md shadow-md transition-all duration-200 
+                  ${highlightedShelfIds.includes(shelf.id) ? "bg-purple-600" : isDoor ? "" : isHorizontal ? "bg-emerald-500" : "bg-blue-500"} text-white hover:opacity-90`}
+                  style={{
+                    left: `${left}%`,
+                    top: `${top}%`,
+                    width: `calc(${width}% - 2px)`,
+                    height: `calc(${height}% - 2px)`,
+                    zIndex: 10,
+                    ...(isDoor
+                      ? {
+                          backgroundImage: `url(${DOOR_IMAGE})`,
+                          backgroundSize: "70% 90%", // Reduce size to 70% width, 90% height
+                          backgroundPosition: "center",
+                          backgroundRepeat: "no-repeat",
+                          backgroundColor: "#f5f5f5", // Light background to show cell boundaries
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "space-between",
+                          padding: "4px",
+                        }
+                      : {
+                          backgroundColor: isHorizontal ? "rgb(16 185 129)" : "rgb(59 130 246)",
+                        }),
+                  }}
+                  draggable={!isMoving}
+                  onDragStart={(e) => onDragStart(e, shelf)}
+                  onDragEnd={onDragEnd}
+                  onClick={() => openShelfModal(shelf)}
+                  data-shelf-id={shelf.id}
+                  data-orientation={shelf.orientation}
+                  data-is-door={isDoor}
+                >
+                  <div className="text-xs font-medium truncate px-1 text-center w-full bg-black/50 rounded">
+                    {!isDoor && shelf.name}
+                  </div>
+                  {!isDoor && (
+                    <div className="flex items-center mt-1 bg-white text-black rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                      <Package className="h-3 w-3 mr-1" />
+                      {shelf.productCount}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     )
@@ -1027,6 +1114,30 @@ export default function WarehouseManager() {
                     <TooltipContent>Añadir estantería vertical</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={() => addShelf("vertical", true)} variant="secondary">
+                        <Grid className="h-4 w-4 mr-2" />
+                        Puerta Vertical
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Añadir puerta vertical</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={() => setWarehouseRotation((prev) => (prev + 90) % 360)} variant="outline">
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Rotar Vista
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Rotar vista del almacén</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
 
               <div className="mt-4 mb-4">
@@ -1070,6 +1181,7 @@ export default function WarehouseManager() {
           onDelete={() => deleteShelf(selectedShelf.id)}
           apiEndpoints={API_ENDPOINTS}
           searchQuery={searchQuery}
+          disableProducts={selectedShelf.isDoor} // Disable products for doors
         />
       )}
     </div>
