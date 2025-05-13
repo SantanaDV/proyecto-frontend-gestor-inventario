@@ -334,7 +334,7 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, sea
 
       {showAvailableProductsModal && (
         <Dialog open={true} onOpenChange={() => setShowAvailableProductsModal(false)}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[900px]">
             <DialogHeader>
               <DialogTitle>Productos Disponibles</DialogTitle>
             </DialogHeader>
