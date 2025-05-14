@@ -1,5 +1,21 @@
 "use client"
 
+/**
+ * @fileoverview Componente que proporciona una visualización interactiva del almacén.
+ * Permite ver la distribución de estanterías y gestionar su contenido.
+ *
+ * @component AlmacenVisual
+ * @requires React
+ * @requires react-router-dom
+ * @requires ../utilities/apiComunicator
+ */
+
+/**
+ * @fileoverview Componente principal para la gestión visual de almacenes
+ * Permite crear, editar y eliminar almacenes, así como gestionar estanterías
+ * mediante arrastrar y soltar, asignar productos y buscar productos en el almacén.
+ */
+
 import { useState, useEffect } from "react"
 import { Grid, Grid3X3, Save, X, ChevronLeft, Warehouse, LayoutGrid, Package, RotateCcw } from "lucide-react"
 import { ShelfModal } from "./shelf-modal"
@@ -11,43 +27,65 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Switch } from "@/components/ui/switch"
 
-// API endpoints as constants
+// API endpoints como constantes para facilitar su mantenimiento
 const API_ENDPOINTS = {
   WAREHOUSE: "http://127.0.0.1:8080/api/almacen",
   SHELF: "http://127.0.0.1:8080/api/estanteria",
   PRODUCT: "http://127.0.0.1:8080/api/producto",
 }
 
-// Door background image
+// Imagen de fondo para las puertas
 const DOOR_IMAGE = "door.png"
 
+/**
+ * Componente principal para la visualización del almacén.
+ * Muestra una representación gráfica de las estanterías y permite interactuar con ellas.
+ *
+ * @param {Object} props - Propiedades del componente
+ * @param {Array} props.estanterias - Lista de estanterías a mostrar
+ * @param {Function} props.onEstanteriaClick - Función a ejecutar cuando se hace clic en una estantería
+ * @param {Function} props.onRefresh - Función para actualizar los datos del almacén
+ * @returns {JSX.Element} Representación visual del almacén
+ */
 export default function WarehouseManager() {
-  // State
+  // Estados para gestionar almacenes
   const [warehouses, setWarehouses] = useState([])
   const [selectedWarehouse, setSelectedWarehouse] = useState(null)
   const [warehouseSize, setWarehouseSize] = useState(null)
   const [rows, setRows] = useState("10")
   const [cols, setCols] = useState("10")
+  const [warehouseName, setWarehouseName] = useState("Nuevo Almacén")
+
+  // Estados para gestionar estanterías
   const [shelves, setShelves] = useState([])
   const [selectedShelf, setSelectedShelf] = useState(null)
+  const [isMoving, setIsMoving] = useState(false) // Controla si se está moviendo una estantería
+
+  // Estados para la interfaz de usuario
   const [showGrid, setShowGrid] = useState(true)
   const [showError, setShowError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("warehouses")
-  const [warehouseName, setWarehouseName] = useState("Nuevo Almacén")
-  const [cellSize, setCellSize] = useState(80) // Cell size in pixels
-  const [isMoving, setIsMoving] = useState(false) // Estado para controlar si se está moviendo una estantería
+  const [cellSize, setCellSize] = useState(80) // Tamaño de celda en píxeles
+  const [warehouseRotation, setWarehouseRotation] = useState(0)
+
+  // Estados para búsqueda de productos
   const [products, setProducts] = useState([]) // Todos los productos
   const [searchQuery, setSearchQuery] = useState("")
   const [highlightedShelfIds, setHighlightedShelfIds] = useState([])
-  const [warehouseRotation, setWarehouseRotation] = useState(0)
 
-  // Calcular la altura de la celda basada en el número de columnas
+  /**
+   * Calcula la altura de la celda basada en el número de columnas
+   * @param {number} columns - Número de columnas
+   * @returns {number} Altura de la celda en píxeles
+   */
   const getCellHeight = (columns) => {
     return Math.max(60, Math.ceil(columns / 5) * 10 + 40)
   }
 
-  // Load data from API on component mount
+  /**
+   * Carga datos iniciales de la API al montar el componente
+   */
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -117,9 +155,13 @@ export default function WarehouseManager() {
     }
 
     fetchData()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Usamos eslint-disable para este caso específico ya que loadAllProducts depende de otros estados
 
-  // Cargar todos los productos
+  /**
+   * Carga todos los productos de la API
+   * @param {Array} shelvesList - Lista de estanterías
+   */
   const loadAllProducts = async (shelvesList) => {
     try {
       const response = await fetch(API_ENDPOINTS.PRODUCT)
@@ -135,7 +177,11 @@ export default function WarehouseManager() {
     }
   }
 
-  // Actualizar estanterías con conteo de productos
+  /**
+   * Actualiza las estanterías con el conteo de productos
+   * @param {Array} shelvesList - Lista de estanterías
+   * @param {Array} productsData - Lista de productos
+   */
   const updateShelvesWithProductCounts = (shelvesList, productsData) => {
     // Crear un mapa de conteo de productos por estantería
     const productCountByShelf = {}
@@ -176,7 +222,9 @@ export default function WarehouseManager() {
     setShelves(updatedShelves)
   }
 
-  // Search for products and highlight shelves
+  /**
+   * Busca productos y resalta las estanterías que los contienen
+   */
   const searchProduct = async () => {
     if (!searchQuery.trim()) {
       setHighlightedShelfIds([])
@@ -188,17 +236,17 @@ export default function WarehouseManager() {
       if (response.ok) {
         const productsData = await response.json()
 
-        // Filter products that match the search query
+        // Filtrar productos que coinciden con la búsqueda
         const matchingProducts = productsData.filter((product) =>
           product.nombre?.toLowerCase().includes(searchQuery.toLowerCase()),
         )
 
-        // Get unique shelf IDs from matching products
+        // Obtener IDs únicos de estanterías de los productos coincidentes
         const shelfIds = matchingProducts
           .filter((product) => product.estanteria && product.estanteria.id_estanteria)
           .map((product) => product.estanteria.id_estanteria)
 
-        // Remove duplicates
+        // Eliminar duplicados
         const uniqueShelfIds = [...new Set(shelfIds)]
 
         setHighlightedShelfIds(uniqueShelfIds)
@@ -208,16 +256,21 @@ export default function WarehouseManager() {
     }
   }
 
-  // Update search results as user types
+  /**
+   * Actualiza los resultados de búsqueda a medida que el usuario escribe
+   */
   useEffect(() => {
     const delaySearch = setTimeout(() => {
       searchProduct()
     }, 300) // Pequeño retraso para evitar demasiadas búsquedas mientras se escribe
 
     return () => clearTimeout(delaySearch)
-  }, [searchQuery])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]) // Usamos eslint-disable ya que searchProduct depende de otros estados
 
-  // Create a new warehouse
+  /**
+   * Crea un nuevo almacén
+   */
   const createWarehouse = async () => {
     const rowCount = Number.parseInt(rows)
     const colCount = Number.parseInt(cols)
@@ -266,7 +319,10 @@ export default function WarehouseManager() {
     }
   }
 
-  // Select a warehouse
+  /**
+   * Selecciona un almacén para editar
+   * @param {Object} warehouse - Almacén a seleccionar
+   */
   const selectWarehouse = async (warehouse) => {
     setSelectedWarehouse(warehouse)
     setWarehouseSize({ rows: warehouse.rows, cols: warehouse.cols })
@@ -310,7 +366,10 @@ export default function WarehouseManager() {
     }
   }
 
-  // Delete a warehouse
+  /**
+   * Elimina un almacén por su ID
+   * @param {number} id - ID del almacén a eliminar
+   */
   const deleteWarehouse = async (id) => {
     if (
       !confirm(
@@ -382,7 +441,11 @@ export default function WarehouseManager() {
     }
   }
 
-  // Add a shelf
+  /**
+   * Añade una nueva estantería al almacén
+   * @param {string} orientation - Orientación de la estantería ("horizontal" o "vertical")
+   * @param {boolean} isDoor - Indica si es una puerta
+   */
   const addShelf = async (orientation, isDoor = false) => {
     if (!warehouseSize || !selectedWarehouse) return
 
@@ -486,7 +549,12 @@ export default function WarehouseManager() {
     }
   }
 
-  // Move a shelf
+  /**
+   * Mueve una estantería a una nueva posición
+   * @param {number} id - ID de la estantería a mover
+   * @param {number} newRow - Nueva fila
+   * @param {number} newCol - Nueva columna
+   */
   const moveShelf = async (id, newRow, newCol) => {
     if (isMoving) return // Evitar múltiples operaciones simultáneas
 
@@ -581,11 +649,20 @@ export default function WarehouseManager() {
     }
   }
 
-  // Delete a shelf
+  /**
+   * Elimina una estantería o puerta por su ID
+   * @param {number} id - ID de la estantería o puerta a eliminar
+   */
   const deleteShelf = async (id) => {
-    if (
-      !confirm("¿Estás seguro de que deseas eliminar esta estantería? Los productos asociados quedarán sin estantería.")
-    ) {
+    // Obtener el tipo de elemento (estantería o puerta)
+    const shelfToDelete = shelves.find((s) => s.id === id)
+    const elementType = shelfToDelete?.isDoor ? "puerta" : "estantería"
+    const confirmMessage =
+      elementType === "puerta"
+        ? `¿Estás seguro de que deseas eliminar esta ${elementType}?`
+        : `¿Estás seguro de que deseas eliminar esta ${elementType}? Los productos asociados quedarán sin ${elementType}.`
+
+    if (!confirm(confirmMessage)) {
       return
     }
 
@@ -627,7 +704,7 @@ export default function WarehouseManager() {
         if (selectedShelf?.id === id) {
           setSelectedShelf(null)
         }
-        alert("Estantería eliminada correctamente")
+        alert(`${elementType.charAt(0).toUpperCase() + elementType.slice(1)} eliminada correctamente`)
       } else {
         const errorText = await response.text()
         console.error("Error deleting shelf:", errorText)
@@ -641,19 +718,36 @@ export default function WarehouseManager() {
     }
   }
 
-  // Open shelf modal
+  /**
+   * Abre el modal de estantería o puerta
+   * @param {Object} shelf - Estantería o puerta seleccionada
+   */
   const openShelfModal = (shelf) => {
+    // Si es una puerta, mostrar un diálogo de confirmación para eliminarla directamente
+    if (shelf.isDoor) {
+      if (confirm(`¿Estás seguro de que deseas eliminar esta puerta (${shelf.name})?`)) {
+        deleteShelf(shelf.id)
+      }
+      return
+    }
+
+    // Si es una estantería normal, abrir el modal completo
     setSelectedShelf(shelf)
   }
 
-  // Close shelf modal
+  /**
+   * Cierra el modal de estantería
+   */
   const closeShelfModal = () => {
     setSelectedShelf(null)
     // Recargar productos después de cerrar el modal para actualizar los conteos
     loadAllProducts(shelves)
   }
 
-  // Save shelf changes
+  /**
+   * Guarda los cambios de una estantería
+   * @param {Object} updatedShelf - Estantería actualizada
+   */
   const saveShelf = async (updatedShelf) => {
     try {
       // Formato correcto para PUT de estantería
@@ -688,7 +782,11 @@ export default function WarehouseManager() {
     }
   }
 
-  // Drag and drop handlers
+  /**
+   * Maneja el inicio del arrastre de una estantería
+   * @param {Event} e - Evento de arrastre
+   * @param {Object} shelf - Estantería a arrastrar
+   */
   const onDragStart = (e, shelf) => {
     if (isMoving) {
       e.preventDefault()
@@ -717,22 +815,40 @@ export default function WarehouseManager() {
     }, 0)
   }
 
+  /**
+   * Maneja el fin del arrastre de una estantería
+   * @param {Event} e - Evento de arrastre
+   */
   const onDragEnd = (e) => {
     // Restaurar la apariencia normal
     e.currentTarget.classList.remove("opacity-50")
   }
 
+  /**
+   * Maneja el evento cuando se arrastra sobre una celda
+   * @param {Event} e - Evento de arrastre
+   */
   const onDragOver = (e) => {
     e.preventDefault()
     // Añadir un indicador visual de que se puede soltar aquí
     e.currentTarget.classList.add("bg-gray-100")
   }
 
+  /**
+   * Maneja el evento cuando se sale de una celda durante el arrastre
+   * @param {Event} e - Evento de arrastre
+   */
   const onDragLeave = (e) => {
     // Quitar el indicador visual
     e.currentTarget.classList.remove("bg-gray-100")
   }
 
+  /**
+   * Maneja el evento cuando se suelta una estantería en una celda
+   * @param {Event} e - Evento de arrastre
+   * @param {number} row - Fila de destino
+   * @param {number} col - Columna de destino
+   */
   const onDrop = (e, row, col) => {
     e.preventDefault()
 
@@ -801,7 +917,9 @@ export default function WarehouseManager() {
     moveShelf(shelfId, row, col)
   }
 
-  // Reset warehouse editor
+  /**
+   * Resetea el editor de almacén
+   */
   const resetEditor = () => {
     setSelectedWarehouse(null)
     setWarehouseSize(null)
@@ -809,7 +927,10 @@ export default function WarehouseManager() {
     setActiveTab("warehouses")
   }
 
-  // Render warehouse grid
+  /**
+   * Renderiza la cuadrícula del almacén
+   * @returns {JSX.Element} Cuadrícula del almacén
+   */
   const renderWarehouseGrid = () => {
     if (!warehouseSize) return null
 
@@ -919,7 +1040,7 @@ export default function WarehouseManager() {
                   draggable={!isMoving}
                   onDragStart={(e) => onDragStart(e, shelf)}
                   onDragEnd={onDragEnd}
-                  onClick={() => !isDoor && openShelfModal(shelf)}
+                  onClick={() => openShelfModal(shelf)}
                   data-shelf-id={shelf.id}
                   data-orientation={shelf.orientation}
                   data-is-door={isDoor}

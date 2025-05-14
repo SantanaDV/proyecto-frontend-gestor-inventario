@@ -1,21 +1,35 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+"use client"
 
+/**
+ * @fileoverview Componente para cerrar sesión
+ * Elimina el token de autenticación y redirige a la página de login
+ */
+
+import { useAuthContext } from "../context/AuthContext"
+
+/**
+ * Componente para cerrar sesión
+ * @returns {JSX.Element} Componente renderizado
+ */
 const LogoutButton = () => {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken'); 
-  };
+  const { logout } = useAuthContext()
 
   return (
-    <a onClick={handleLogout}
-    href="/"
-    className="block px-4 py-2 text-sm text-black data-focus:bg-red-200 data-focus:outline-hidden"
-    >
-    Logout
-     </a>
-  );
-};
+    <div className="flex items-center justify-center h-screen">
+      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+        <h2 className="text-2xl font-bold mb-4 text-center">Cerrar Sesión</h2>
+        <p className="mb-6 text-center">¿Estás seguro de que deseas cerrar sesión?</p>
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={logout}
+            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-export default LogoutButton;
+export default LogoutButton

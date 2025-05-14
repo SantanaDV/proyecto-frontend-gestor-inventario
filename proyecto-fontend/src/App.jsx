@@ -1,43 +1,102 @@
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import Home from "./pages/Home";
-import Almacen from "./pages/Almacen"; 
-import Estanteria from "./components/Estanteria";
-import Inventario from "./pages/Inventario";
-import Tareas from "./pages/Tareas";
-import Login from "./pages/Login";
-import CalendarioTareas from './pages/Calendar';
-import LogoutButton from './utilities/auth';
+/**
+ * @fileoverview Componente principal de la aplicación
+ * Configura las rutas y el contexto de autenticación
+ */
 
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom"
+import { AuthProvider } from "./context/AuthContext"
+import AppLayout from "./components/layout/AppLayout"
+import ProtectedRoute from "./components/layout/ProtectedRoute"
+
+// Páginas
+import Home from "./pages/Home"
+import Login from "./pages/Login"
+import Almacen from "./pages/Almacen"
+import Estanteria from "./components/Estanteria"
+import Inventario from "./pages/Inventario"
+import Tareas from "./pages/Tareas"
+import CalendarioTareas from "./pages/Calendar"
+import LogoutButton from "./utilities/auth"
+
+/**
+ * Componente principal de la aplicación
+ * @returns {JSX.Element} Componente renderizado
+ */
 function App() {
   return (
     <Router>
-      <AppContent />
+      <AuthProvider>
+        <AppLayout>
+          <Routes>
+            <Route path="/" element={<Login />} />
+
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/almacen"
+              element={
+                <ProtectedRoute>
+                  <Almacen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/estanteria/:id"
+              element={
+                <ProtectedRoute>
+                  <Estanteria />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/inventario"
+              element={
+                <ProtectedRoute>
+                  <Inventario />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/tareas"
+              element={
+                <ProtectedRoute>
+                  <Tareas />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/calendario"
+              element={
+                <ProtectedRoute>
+                  <CalendarioTareas />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/logout"
+              element={
+                <ProtectedRoute>
+                  <LogoutButton />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </AppLayout>
+      </AuthProvider>
     </Router>
-  );
+  )
 }
 
-function AppContent() {
-  const location = useLocation(); 
-  return (
-    <>
-      {location.pathname !== '/' && <Navbar />}
-      
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/almacen" element={<Almacen />} />
-        <Route path="/estanteria/:id" element={<Estanteria />} />
-        <Route path="/inventario" element={<Inventario />} />
-        <Route path="/tareas" element={<Tareas />} />
-        <Route path="/calendario" element={<CalendarioTareas />} />
-        <Route path='/logout' element={<LogoutButton/>} />
-      </Routes>
-
-      {location.pathname !== '/' && <Footer />}
-    </>
-  );
-}
-
-export default App;
+export default App
