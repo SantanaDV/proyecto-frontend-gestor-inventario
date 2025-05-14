@@ -909,7 +909,11 @@ export default function WarehouseManager() {
                           padding: "4px",
                         }
                       : {
-                          backgroundColor: isHorizontal ? "rgb(16 185 129)" : "rgb(59 130 246)",
+                          backgroundColor: highlightedShelfIds.includes(shelf.id)
+                            ? "rgb(147 51 234)" // Purple for highlighted shelves
+                            : isHorizontal
+                              ? "rgb(16 185 129)"
+                              : "rgb(59 130 246)",
                         }),
                   }}
                   draggable={!isMoving}
