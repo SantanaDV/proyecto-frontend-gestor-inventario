@@ -1,11 +1,35 @@
 "use client"
 
+/**
+ * @fileoverview Página de gestión de inventario que muestra y permite administrar los productos.
+ * Proporciona funcionalidades para ver, filtrar, añadir, editar y eliminar productos del inventario.
+ *
+ * @component Inventario
+ * @requires React
+ * @requires react-router-dom
+ * @requires ../utilities/apiComunicator
+ * @requires ../components/ui/LoadingSpinner
+ * @requires ../components/ui/ErrorMessage
+ * @requires ../components/ui/table
+ */
+
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import HeaderFuncional from "../components/HeaderFuncional"
 import axios from "axios"
+import ErrorMessage from "../components/ui/ErrorMessage"
+import LoadingSpinner from "../components/ui/LoadingSpinner"
+
+/**
+ * Página principal de gestión de inventario.
+ * Muestra una tabla con todos los productos disponibles y proporciona herramientas para su gestión.
+ *
+ * @returns {JSX.Element} Página completa de inventario con tabla de productos y controles
+ */
 export default function Inventario() {
   const navigate = useNavigate()
+
+  // Estados para datos y carga
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -14,13 +38,18 @@ export default function Inventario() {
   const [errorCategoria, setErrorCategoria] = useState(null)
   const [parsedData, setParsedData] = useState([])
   const [categorias, setCategorias] = useState([])
+
+  // Estados para filtros
   const [categoriaFiltro, setCategoriaFiltro] = useState("")
   const [cantidadFiltro, setCantidadFiltro] = useState("")
+
+  // Estados para modales
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedFileName, setSelectedFileName] = useState("")
 
+  // Estado para el nuevo producto
   const [newProduct, setNewProduct] = useState({
     id_producto: "",
     nombre: "",
@@ -32,15 +61,18 @@ export default function Inventario() {
     fecha_creacion: new Date().toISOString().split("T")[0],
   })
 
+  // Estados para paginación
   const [paginaActiva, setPaginaActiva] = useState(1)
   const [paginaDesactivada, setPaginaDesactivada] = useState(1)
   const productosPorPagina = 3
 
-  // Añadir estos estados después de los otros estados
+  // Estados para recargar datos
   const [shouldRefreshProducts, setShouldRefreshProducts] = useState(0)
   const [shouldRefreshCategories, setShouldRefreshCategories] = useState(0)
 
-  // Función para cargar productos
+  /**
+   * Función para cargar productos
+   */
   const fetchProductos = async () => {
     try {
       setLoading(true)
@@ -56,7 +88,9 @@ export default function Inventario() {
     }
   }
 
-  // Función para cargar categorías
+  /**
+   * Función para cargar categorías
+   */
   const fetchCategorias = async () => {
     try {
       setLoadingCategoria(true)
@@ -71,22 +105,21 @@ export default function Inventario() {
     }
   }
 
-  // Reemplazar el useEffect que carga los datos iniciales
+  // Verificar autenticación al cargar
   useEffect(() => {
     if (!localStorage.getItem("authToken")) {
       navigate("/")
     }
   }, [navigate])
 
-  // Añadir estos useEffect para cargar productos y categorías
-  
-
+  // Cargar categorías
   useEffect(() => {
     if (localStorage.getItem("authToken")) {
       fetchCategorias()
     }
   }, [shouldRefreshCategories])
 
+  // Filtrar productos según los criterios
   const productosFiltrados = parsedData.filter((producto) => {
     const categoriaValida = producto.categoria?.descripcion || "Sin categoría"
     const cantidadValida = Number(producto.cantidad) || 0
@@ -96,9 +129,11 @@ export default function Inventario() {
     )
   })
 
+  // Separar productos por estado
   const productosActivos = productosFiltrados.filter((p) => p.estado === "activo")
   const productosDesactivados = productosFiltrados.filter((p) => p.estado === "desactivado")
 
+  // Calcular productos paginados
   const indiceInicioActivos = (paginaActiva - 1) * productosPorPagina
   const productosActivosPaginados = productosActivos.slice(
     indiceInicioActivos,
@@ -111,6 +146,11 @@ export default function Inventario() {
     indiceInicioDesactivados + productosPorPagina,
   )
 
+  /**
+   * Componente de paginación
+   * @param {Object} props - Propiedades del componente
+   * @returns {JSX.Element} Componente renderizado
+   */
   const Paginacion = ({ total, actual, setActual }) => {
     const totalPaginas = Math.ceil(total / productosPorPagina)
     if (totalPaginas <= 1) return <div className="flex justify-center items-center mt-12 gap-2 flex-wrap"></div>
@@ -144,11 +184,17 @@ export default function Inventario() {
     )
   }
 
+  /**
+   * Cierra el modal y recarga los productos
+   */
   const handleModalClose = () => {
     setIsModalOpen(false)
     setShouldRefreshProducts((prev) => prev + 1) // Incrementar para forzar la recarga
   }
 
+  /**
+   * Abre el modal para crear un nuevo producto
+   */
   const handleModalOpen = () => {
     const sortedData = [...parsedData].sort((a, b) => Number(a.id_producto) - Number(b.id_producto))
     const lastItem = sortedData[sortedData.length - 1]
@@ -170,6 +216,10 @@ export default function Inventario() {
     setIsModalOpen(true)
   }
 
+  /**
+   * Maneja el cambio de archivo de imagen
+   * @param {Event} e - Evento de cambio de archivo
+   */
   const handleFileChange = (e) => {
     const file = e.target.files[0]
     if (file) {
@@ -181,6 +231,10 @@ export default function Inventario() {
     }
   }
 
+  /**
+   * Maneja el cambio en los campos del formulario
+   * @param {Event} e - Evento de cambio
+   */
   const handleInputChange = (e) => {
     const { name, value } = e.target
     if (name === "categoria") {
@@ -203,6 +257,10 @@ export default function Inventario() {
     }
   }
 
+  /**
+   * Guarda un producto (nuevo o editado)
+   * @param {Event} e - Evento del formulario
+   */
   const handleSaveProduct = async (e) => {
     e.preventDefault()
 
@@ -309,6 +367,10 @@ export default function Inventario() {
     }
   }
 
+  /**
+   * Abre el modal para editar un producto
+   * @param {Object} producto - Producto a editar
+   */
   const handleEditProduct = (producto) => {
     // Formatear la fecha para que no tenga la parte de la hora
     const fechaSinHora = producto.fecha_creacion.split("T")[0] // Esto deja solo la fecha
@@ -323,7 +385,10 @@ export default function Inventario() {
     setIsModalOpen(true)
   }
 
-  // Corregir la función handleDeleteProduct
+  /**
+   * Elimina un producto
+   * @param {number} id_producto - ID del producto a eliminar
+   */
   const handleDeleteProduct = async (id_producto) => {
     const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?")
     if (confirmDelete) {
@@ -352,6 +417,8 @@ export default function Inventario() {
       }
     }
   }
+
+  // Filtrar categorías según lo que se escribe
   const categoriasFiltradas = categorias.filter((cat) => {
     return (
       newProduct.categoria.descripcion &&
@@ -359,24 +426,39 @@ export default function Inventario() {
     )
   })
 
+  // Estados para gestionar categorías
   const [isModalCategoriasOpen, setIsModalCategoriasOpen] = useState(false)
   const [isEditCategoriaOpen, setIsEditCategoriaOpen] = useState(false)
   const [selectedCategoria, setSelectedCategoria] = useState(null)
 
+  /**
+   * Abre el modal para editar categorías
+   */
   const handleModalOpenCategorias = () => {
     setIsModalCategoriasOpen(true)
   }
 
+  /**
+   * Maneja el cambio en los campos del formulario de categoría
+   * @param {Event} e - Evento de cambio
+   */
   const handleCategoriaInputChange = (e) => {
     const { name, value } = e.target
     setSelectedCategoria((prev) => ({ ...prev, [name]: value }))
   }
 
+  /**
+   * Selecciona una categoría para editar
+   * @param {Object} categoria - Categoría seleccionada
+   */
   const handleCategoriaSeleccionada = (categoria) => {
     setSelectedCategoria({ ...categoria })
     setIsEditCategoriaOpen(true)
   }
 
+  /**
+   * Guarda los cambios en una categoría
+   */
   const handleSaveCategoria = async () => {
     try {
       await axios.put("http://localhost:8080/api/categoria", selectedCategoria, {
@@ -396,13 +478,36 @@ export default function Inventario() {
     }
   }
 
-
+  // Cargar productos al iniciar o cuando cambian los estados de recarga
   useEffect(() => {
     if (localStorage.getItem("authToken")) {
       fetchProductos()
     }
-  }, [shouldRefreshProducts,isModalOpen,isModalCategoriasOpen])
+  }, [shouldRefreshProducts, isModalOpen, isModalCategoriasOpen])
 
+  // Mostrar indicador de carga mientras se cargan los datos
+  if (loading) {
+    return (
+      <>
+        <HeaderFuncional />
+        <div className="flex justify-center items-center h-[calc(100vh-200px)]">
+          <LoadingSpinner size="large" message="Cargando productos..." />
+        </div>
+      </>
+    )
+  }
+
+  // Mostrar mensaje de error si hay un error
+  if (error) {
+    return (
+      <>
+        <HeaderFuncional />
+        <div className="container mx-auto p-4">
+          <ErrorMessage message={error} onRetry={fetchProductos} />
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -465,7 +570,7 @@ export default function Inventario() {
                   </div>
                 </div>
                 <img
-                  src={"http://localhost:8080/imagen/" + producto.url_img}
+                  src={`http://localhost:8080/imagen/${producto.url_img}`}
                   alt={producto.nombre}
                   onClick={() => handleEditProduct(producto)}
                   className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
@@ -513,7 +618,7 @@ export default function Inventario() {
                   </div>
                 </div>
                 <img
-                  src={"http://localhost:8080/imagen/" + producto.url_img}
+                  src={`http://localhost:8080/imagen/${producto.url_img}`}
                   alt={producto.nombre}
                   onClick={() => handleEditProduct(producto)}
                   className="w-24 h-24 object-cover rounded-md mb-4 mx-auto cursor-pointer hover:opacity-75 transition"
@@ -694,7 +799,7 @@ export default function Inventario() {
                             }}
                             className="cursor-pointer px-2 py-1 hover:bg-gray-200"
                           >
-                            {cat.descripcion + " (ID: " + cat.id + ")"}
+                            {`${cat.descripcion} (ID: ${cat.id})`}
                           </li>
                         ))}
                       </ul>
@@ -706,7 +811,7 @@ export default function Inventario() {
                           }}
                           className="cursor-pointer px-2 py-1 text-gree-600 hover:bg-gray-200"
                         >
-                          <p className="hidden"> {(newProduct.categoria.id = -1)}</p>
+                          <p className="hidden">{`${(newProduct.categoria.id = -1)}`}</p>
                           Se creara una nueva categoría
                         </li>
                       </ul>
@@ -745,7 +850,10 @@ export default function Inventario() {
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="text-white bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded">
+                <button
+                  type="submit"
+                  className="text-white bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded"
+                >
                   {isEditing ? "Actualizar" : "Guardar"}
                 </button>
               </div>

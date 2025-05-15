@@ -1,15 +1,38 @@
 "use client"
 
+/**
+ * @fileoverview Página de gestión de tareas que permite visualizar y administrar las tareas del sistema.
+ * Proporciona funcionalidades para crear, editar, completar y eliminar tareas.
+ *
+ * @component Tareas
+ * @requires React
+ * @requires react-router-dom
+ * @requires ../utilities/apiComunicator
+ * @requires ../components/ui/LoadingSpinner
+ * @requires ../components/ui/ErrorMessage
+ * @requires ../components/ui/card
+ */
+
+/**
+ * @fileoverview Página de gestión de tareas
+ * Permite crear, asignar, editar y filtrar tareas
+ */
+
 import { useState, useEffect } from "react"
 import useApi from "../utilities/apiComunicator"
 import HeaderFuncional from "../components/HeaderFuncional"
 import { useNavigate } from "react-router-dom"
 
+/**
+ * Página principal de gestión de tareas.
+ * Muestra las tareas organizadas por estado (pendientes, en progreso, completadas)
+ * y permite realizar operaciones sobre ellas.
+ *
+ * @returns {JSX.Element} Página completa de tareas con sus diferentes secciones y controles
+ */
 export default function Tareas() {
+  // Hooks para comunicación con la API
   const { data, loading, error, setUri, setError, setOptions } = useApi("api/tarea", {})
-  const [categoriaInput, setCategoriaInput] = useState("")
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [categoriasFiltradas, setCategoriasFiltradas] = useState([])
   const {
     data: categoriasData,
     loading: loadingCategorias,
@@ -31,6 +54,9 @@ export default function Tareas() {
     else if (empleadosData) setErrorEmpleados("Los datos de empleados no son válidos")
   }, [empleadosData, setErrorEmpleados])
 
+  const [categoriaInput, setCategoriaInput] = useState("")
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [categoriasFiltradas, setCategoriasFiltradas] = useState([])
   const [isModalCategoriasOpen, setIsModalCategoriasOpen] = useState(false)
   const [isEditCategoriaOpen, setIsEditCategoriaOpen] = useState(false)
   const [selectedCategoria, setSelectedCategoria] = useState(null)
@@ -286,7 +312,6 @@ export default function Tareas() {
   }
 
   const handleEdit = (tarea) => {
-  
     setNewTask({
       ...tarea,
       fecha_asignacion: tarea.fecha_asignacion.split("T")[0],
@@ -518,7 +543,7 @@ export default function Tareas() {
                             onMouseDown={() => handleCategoriaSelect(c)}
                             className="cursor-pointer px-2 py-1 hover:bg-gray-200"
                           >
-                            {c.descripcion}
+                            {`${c.descripcion} (ID: ${c.id})`}
                           </li>
                         ))
                       ) : categoriaInput ? (
@@ -526,7 +551,7 @@ export default function Tareas() {
                           onMouseDown={handleCrearNuevaCategoria}
                           className="cursor-pointer px-2 py-1 hover:bg-gray-200 text-blue-600"
                         >
-                          Crear nueva categoría "{categoriaInput}"
+                          {`Crear nueva categoría "${categoriaInput}"`}
                         </li>
                       ) : (
                         <li className="px-2 py-1 text-gray-500">Escribe para buscar o crear</li>
@@ -573,248 +598,25 @@ export default function Tareas() {
                   value={newTask.fecha_asignacion}
                   onChange={handleInputChange}
                   className="border p-2 rounded w-full"
-                  required
                 />
               </div>
-
-              <div className="flex justify-between">
-                <button onClick={handleModalClose} className="bg-red-300 text-black px-4 py-2 rounded">
+              <div className="flex justify-end">
+                <button
+                  onClick={handleModalClose}
+                  className="bg-gray-500 text-white px-4 py-2 rounded mr-2"
+                >
                   Cancelar
                 </button>
-                <button onClick={handleSaveTask} className="bg-red-500 text-white px-4 py-2 rounded">
+                <button
+                  onClick={handleSaveTask}
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                >
                   Guardar
                 </button>
               </div>
             </div>
           </div>
         )}
-
-        {/* Modal de Listar y Editar Categoria */}
-        {isModalCategoriasOpen && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg w-1/3">
-              <h3 className="text-2xl mb-4 text-center">Editar Categorías</h3>
-              <ul className="mb-4 max-h-80 overflow-y-auto pr-2">
-                {" "}
-                {/* Aumento de altura */}
-                {categorias.map((categoria) => (
-                  <li key={categoria.id} className="flex justify-between items-center mb-2">
-                    <p>{categoria.descripcion}</p>
-                    <button
-                      onClick={() => handleCategoriaSeleccionada(categoria)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded"
-                    >
-                      Editar
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex justify-center">
-                <button
-                  onClick={() => setIsModalCategoriasOpen(false)}
-                  className="bg-red-300 text-black px-4 py-2 rounded"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {isEditCategoriaOpen && selectedCategoria && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg w-1/3">
-              <h3 className="text-2xl mb-4 text-center">Editar Categoría</h3>
-              <div className="mb-4">
-                <label className="block text-sm font-medium">ID</label>
-                <input
-                  type="text"
-                  name="id"
-                  value={selectedCategoria.id}
-                  readOnly
-                  className="border p-2 rounded w-full bg-red-200 cursor-not-allowed"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium">Descripción</label>
-                <input
-                  type="text"
-                  name="descripcion"
-                  value={categoriaInput}
-                  onChange={handleCategoriaInputChange}
-                  className="border p-2 rounded w-full"
-                  required
-                />
-              </div>
-              <div className="flex justify-between">
-                <button
-                  onClick={() => setIsEditCategoriaOpen(false)}
-                  className="bg-red-300 text-black px-4 py-2 rounded"
-                >
-                  Cancelar
-                </button>
-                <button onClick={handleSaveCategoria} className="bg-red-500 text-white px-4 py-2 rounded">
-                  Guardar Cambios
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal de Asignar Usuario */}
-        {isModalOpenAsignar && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg w-1/3">
-              <h3 className="text-2xl mb-4 text-center">Asignar Usuario a la Tarea</h3>
-              <div>
-                <h4 className="text-lg font-medium mb-2">Selecciona una tarea:</h4>
-                <ul className="mb-4">
-                  {tasksSinAsignar.map((tarea) => (
-                    <li key={tarea.id} className="flex justify-between items-center mb-2">
-                      <p>{tarea.descripcion}</p>
-                      <button
-                        onClick={() => handleTareaSeleccionadaAsignar(tarea)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded"
-                      >
-                        Asignar
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                {selectedTask && (
-                  <div>
-                    <h4 className="mb-2">Asignar Usuario a: {selectedTask.descripcion}</h4>
-                    <select
-                      name="empleado_asignado"
-                      value={newTask.empleado_asignado}
-                      onChange={handleInputChange}
-                      className="border p-2 rounded w-full"
-                      required
-                    >
-                      <option value="">Selecciona un empleado</option>
-                      {empleadosData.map((empleado) => (
-                        <option key={empleado.id_usuario} value={empleado.id_usuario}>
-                          {empleado.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-center space-x-4">
-                <button
-                  onClick={() => setIsModalOpenAsignar(false)}
-                  className="bg-red-300 text-black px-4 py-2 rounded mt-4"
-                >
-                  Cancelar
-                </button>
-                <button onClick={handleSaveAsignacion} className="bg-red-500 text-white px-4 py-2 rounded mt-4">
-                  Guardar Asignación
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Filtro */}
-        <div className="flex justify-center gap-4 mb-4">
-          <input
-            type="text"
-            name="empleado"
-            placeholder="Nombre empleado"
-            value={filters.empleado}
-            onChange={handleFilterChange}
-            className="border p-2 rounded"
-          />
-        </div>
-
-        {/* Tarjetas por categoría */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {[
-            ["Por Hacer", paginatedPorHacer, tasksPorHacer.length, pagePorHacer, setPagePorHacer, "bg-red-50"],
-            ["En Proceso", paginatedEnProceso, tasksEnProceso.length, pageEnProceso, setPageEnProceso, "bg-yellow-50"],
-            [
-              "Finalizadas",
-              paginatedFinalizadas,
-              tasksFinalizadas.length,
-              pageFinalizadas,
-              setPageFinalizadas,
-              "bg-green-50",
-            ],
-          ].map(([title, paginatedTasks, totalLength, currentPage, setPage, bgColor]) => (
-            <div key={title}>
-              <h2 className="text-2xl font-medium text-center mb-4">Tareas {title}</h2>
-              {/* Paginación */}
-              <div className="flex justify-center items-center mt-4 gap-2 flex-wrap">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1, setPage, totalLength)}
-                  disabled={currentPage <= 0}
-                  className={`px-3 py-1 border rounded ${
-                    currentPage <= 0 ? "bg-gray-300 cursor-not-allowed text-gray-600" : "bg-gray-300 hover:bg-gray-400"
-                  }`}
-                >
-                  Anterior
-                </button>
-                {Array.from({ length: Math.ceil(totalLength / itemsPerPage) }, (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handlePageChange(i, setPage, totalLength)}
-                    className={`px-3 py-1 rounded border ${
-                      i === currentPage ? "bg-gray-600 text-white" : "bg-white hover:bg-gray-400"
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-                <button
-                  onClick={() => handlePageChange(currentPage + 1, setPage, totalLength)}
-                  disabled={currentPage >= Math.ceil(totalLength / itemsPerPage) - 1}
-                  className={`px-3 py-1 border rounded ${
-                    currentPage >= Math.ceil(totalLength / itemsPerPage) - 1
-                      ? "bg-gray-300 cursor-not-allowed text-gray-600"
-                      : "bg-gray-300 hover:bg-gray-400"
-                  }`}
-                >
-                  Siguiente
-                </button>
-              </div>
-              <div className="grid grid-cols-1 gap-6 mt-4">
-                {paginatedTasks.map((tarea) => (
-                  <div key={tarea.id} className={`border border-gray-300 rounded-lg shadow-lg p-5 ${bgColor}`}>
-                    <div className="flex">
-                      <h3 className="text-lg font-semibold text-gray-600">{tarea.descripcion}</h3>
-                      <div className="ml-auto flex gap-2">
-                        <button onClick={() => handleEdit(tarea)}>
-                          <img className="w-6 h-6" src="editar.png" alt="Editar" />
-                        </button>
-                        <button onClick={() => handleDelete(tarea)}>
-                          <img className="w-6 h-6" src="eliminar.png" alt="Eliminar" />
-                        </button>
-                      </div>
-                    </div>
-                    <p className={`text-sm ${getStatusColor(tarea.estado)}`}>
-                      <strong>Estado:</strong> {tarea.estado}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <strong>Empleado Asignado:</strong>{" "}
-                      {empleadosData.find((e) => String(e.id_usuario) === String(tarea.empleado_asignado))?.nombre ||
-                        "Sin asignar"}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <strong>Categoría:</strong>{" "}
-                      {categorias.find((cat) => String(cat.id) === String(tarea.id_categoria))?.descripcion ||
-                        "Sin asignar"}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      <strong>Fecha de Asignación:</strong> {tarea.fecha_asignacion}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </>
   )

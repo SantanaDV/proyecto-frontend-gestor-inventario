@@ -1,16 +1,44 @@
 "use client"
 
+/**
+ * @fileoverview Página de calendario que muestra eventos y permite gestionar actividades programadas.
+ * Integra un calendario interactivo con funcionalidades de gestión de eventos.
+ *
+ * @component Calendar
+ * @requires React
+ * @requires react-router-dom
+ * @requires ../utilities/apiComunicator
+ * @requires ../components/ui/LoadingSpinner
+ * @requires ../components/ui/ErrorMessage
+ */
+
+/**
+ * @fileoverview Página de calendario de tareas
+ * Muestra las tareas en un calendario mensual
+ */
+
 import { useState, useEffect } from "react"
 import axios from "axios"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import HeaderFuncional from "@/components/HeaderFuncional"
+
+/**
+ * Página que muestra un calendario interactivo con eventos y actividades programadas.
+ * Permite visualizar, crear, editar y eliminar eventos del calendario.
+ *
+ * @returns {JSX.Element} Página completa del calendario con sus funcionalidades
+ */
 export default function Calendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [events, setEvents] = useState([])
 
+  // Días de la semana para el encabezado del calendario
   const daysOfWeek = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
+  /**
+   * Carga las tareas desde la API al montar el componente
+   */
   useEffect(() => {
     // Función para obtener las tareas de la API
     const fetchTasks = async () => {
@@ -39,7 +67,11 @@ export default function Calendar() {
     fetchTasks()
   }, [])
 
-  // Función para obtener los datos del mes
+  /**
+   * Obtiene los datos del mes para el calendario
+   * @param {Date} date - Fecha del mes a mostrar
+   * @returns {Array} Matriz de semanas con días
+   */
   const getMonthData = (date) => {
     const year = date.getFullYear()
     const month = date.getMonth()
@@ -47,13 +79,15 @@ export default function Calendar() {
     const firstDay = new Date(year, month, 1)
     const lastDay = new Date(year, month + 1, 0)
 
+    // Ajustar para que la semana comience el lunes (0 = lunes, 6 = domingo)
     let firstDayOfWeek = firstDay.getDay() - 1
     if (firstDayOfWeek === -1) firstDayOfWeek = 6
 
     const daysFromPrevMonth = firstDayOfWeek
-    const totalDays = 42
+    const totalDays = 42 // 6 semanas x 7 días
     const calendarDays = []
 
+    // Días del mes anterior
     const prevMonth = new Date(year, month - 1)
     const prevMonthLastDay = new Date(year, month, 0).getDate()
 
@@ -64,6 +98,7 @@ export default function Calendar() {
       })
     }
 
+    // Días del mes actual
     for (let i = 1; i <= lastDay.getDate(); i++) {
       calendarDays.push({
         date: new Date(year, month, i),
@@ -71,6 +106,7 @@ export default function Calendar() {
       })
     }
 
+    // Días del mes siguiente
     const nextMonth = new Date(year, month + 1)
     const remainingDays = totalDays - calendarDays.length
 
@@ -81,6 +117,7 @@ export default function Calendar() {
       })
     }
 
+    // Agrupar los días en semanas
     const weeks = []
     for (let i = 0; i < calendarDays.length; i += 7) {
       weeks.push(calendarDays.slice(i, i + 7))
@@ -89,24 +126,44 @@ export default function Calendar() {
     return weeks
   }
 
+  // Obtener las semanas del mes actual
   const weeks = getMonthData(currentMonth)
 
+  /**
+   * Formatea el mes y año para mostrar en el encabezado
+   * @param {Date} date - Fecha a formatear
+   * @returns {string} Mes y año formateados
+   */
   const formatMonth = (date) => {
     return date.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
   }
 
+  /**
+   * Navega al mes anterior
+   */
   const handlePrevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))
   }
 
+  /**
+   * Navega al mes siguiente
+   */
   const handleNextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))
   }
 
+  /**
+   * Navega al mes actual
+   */
   const handleToday = () => {
     setCurrentMonth(new Date())
   }
 
+  /**
+   * Obtiene los eventos para una fecha específica
+   * @param {Date} date - Fecha para la que se buscan eventos
+   * @returns {Array} Lista de eventos para la fecha
+   */
   const getEventsForDate = (date) => {
     return events.filter(
       (event) =>
@@ -120,6 +177,11 @@ export default function Calendar() {
     )
   }
 
+  /**
+   * Verifica si una fecha es hoy
+   * @param {Date} date - Fecha a verificar
+   * @returns {boolean} true si la fecha es hoy
+   */
   const isToday = (date) => {
     const today = new Date()
     return (
@@ -129,6 +191,11 @@ export default function Calendar() {
     )
   }
 
+  /**
+   * Obtiene el color de fondo según el estado de la tarea
+   * @param {string} estado - Estado de la tarea
+   * @returns {string} Clases CSS para el color de fondo
+   */
   const getStatusColor = (estado) => {
     switch (estado) {
       case "Por hacer":

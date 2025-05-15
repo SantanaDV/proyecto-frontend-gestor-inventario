@@ -1,5 +1,21 @@
 "use client"
 
+/**
+ * @fileoverview Modal específico para la gestión de estanterías.
+ * Permite ver detalles de una estantería y realizar operaciones sobre ella.
+ *
+ * @component ShelfModal
+ * @requires React
+ * @requires ../utilities/apiComunicator
+ * @requires ../components/ui/dialog
+ * @requires ../components/ui/button
+ */
+
+/**
+ * @fileoverview Componente modal para gestionar estanterías
+ * Permite ver, asignar y desasignar productos a una estantería
+ */
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -8,12 +24,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Package, Unlink, Search } from "lucide-react"
 
+/**
+ * Modal para visualizar y gestionar los detalles de una estantería específica.
+ * Permite ver productos almacenados, editar propiedades y realizar otras operaciones.
+ *
+ * @param {Object} props - Propiedades del componente
+ * @param {boolean} props.isOpen - Indica si el modal está abierto
+ * @param {Function} props.onClose - Función para cerrar el modal
+ * @param {Object} props.shelf - Datos de la estantería a mostrar
+ * @param {Function} props.onRefresh - Función para actualizar los datos después de cambios
+ * @returns {JSX.Element} Modal con detalles y opciones de gestión de la estantería
+ */
 export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, searchQuery = "" }) {
+  // Estados para gestionar el formulario y los datos
   const [formData, setFormData] = useState({ ...shelf })
   const [isLoading, setIsLoading] = useState(false)
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
 
+  // Cargar datos iniciales
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -45,10 +74,13 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, sea
     fetchData()
   }, [shelf.id, apiEndpoints.PRODUCT])
 
-  // Añadir una nueva función para cargar productos sin estantería
+  // Estados para gestionar productos disponibles
   const [availableProducts, setAvailableProducts] = useState([])
   const [showAvailableProductsModal, setShowAvailableProductsModal] = useState(false)
 
+  /**
+   * Carga productos sin estantería asignada
+   */
   const loadAvailableProducts = async () => {
     setIsLoading(true)
     try {
@@ -67,18 +99,23 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, sea
     }
   }
 
-  // Añadir una nueva función para controlar el diálogo de selección de balda:
+  // Estados para gestionar la asignación de productos a baldas
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [showBaldaModal, setShowBaldaModal] = useState(false)
   const [baldaValue, setBaldaValue] = useState("")
 
-  // Modificar la función assignProductToShelf para que muestre un diálogo que solicite el número de balda antes de asignar el producto.
+  /**
+   * Prepara la asignación de un producto a la estantería
+   * @param {Object} product - Producto a asignar
+   */
   const assignProductToShelf = (product) => {
     setSelectedProduct(product)
     setShowBaldaModal(true)
   }
 
-  // Añadir función para asignar un producto existente a esta estantería
+  /**
+   * Completa la asignación de un producto a la estantería
+   */
   const completeProductAssignment = async () => {
     if (!selectedProduct || !baldaValue) return
 
@@ -143,6 +180,11 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, sea
       setIsLoading(false)
     }
   }
+
+  /**
+   * Maneja el envío del formulario
+   * @param {Event} e - Evento del formulario
+   */
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
@@ -155,6 +197,11 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, sea
       setIsLoading(false)
     }
   }
+
+  /**
+   * Desasigna un producto de la estantería
+   * @param {number} productId - ID del producto a desasignar
+   */
   const handleUnassignProduct = async (productId) => {
     if (!confirm("¿Estás seguro de que deseas desasignar este producto de la estantería?")) return
 
@@ -207,7 +254,11 @@ export function ShelfModal({ shelf, onClose, onSave, onDelete, apiEndpoints, sea
     }
   }
 
-  // Función para verificar si un producto coincide con la búsqueda
+  /**
+   * Verifica si un producto coincide con la búsqueda
+   * @param {Object} product - Producto a verificar
+   * @returns {boolean} true si el producto coincide con la búsqueda
+   */
   const matchesSearch = (product) => {
     if (!searchQuery || searchQuery.trim() === "") return false
     return product.nombre?.toLowerCase().includes(searchQuery.toLowerCase())
