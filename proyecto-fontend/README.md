@@ -23,17 +23,68 @@ Qualica-RD es una aplicación web para la gestión de almacenes, inventario y ta
 
 ## Estructura del Proyecto
 
-\`\`\`
-src/
-├── components/         # Componentes reutilizables
-│   ├── layout/         # Componentes de estructura
-│   └── ui/             # Componentes de interfaz de usuario
-├── context/            # Contextos de React
-├── hooks/              # Hooks personalizados
-├── pages/              # Páginas principales
-├── services/           # Servicios de API
-└── utilities/          # Utilidades y funciones auxiliares
-\`\`\`
+proyecto-frontend/
+├── excel_bd/
+├── Manuales/
+├── node_modules/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── AppLayout.jsx
+│   │   │   └── ProtectedRoute.jsx
+│   │   └── ui/
+│   │       ├── Badge.jsx
+│   │       ├── Button.jsx
+│   │       ├── Card.jsx
+│   │       ├── ConfirmDialog.jsx
+│   │       ├── Dialog.jsx
+│   │       ├── DropdownMenu.jsx
+│   │       ├── ErrorMessage.jsx
+│   │       ├── Input.jsx
+│   │       ├── Label.jsx
+│   │       ├── LoadingSpinner.jsx
+│   │       ├── Select.jsx
+│   │       ├── Separator.jsx
+│   │       ├── Switch.jsx
+│   │       ├── Table.jsx
+│   │       ├── Tabs.jsx
+│   │       ├── Textarea.jsx
+│   │       └── Tooltip.jsx
+│   ├── context/
+│   │   └── AuthContext.jsx
+│   ├── hooks/
+│   │   ├── useApi.js
+│   │   ├── useAuth.js
+│   │   └── useLocalStorage.js
+│   ├── lib/
+│   │   └── utils.js
+│   ├── pages/
+│   │   ├── Almacen.jsx
+│   │   ├── Calendar.jsx
+│   │   ├── Home.jsx
+│   │   ├── Inventario.jsx
+│   │   ├── Login.jsx
+│   │   └── Tareas.jsx
+│   ├── services/
+│   │   └── api.js
+│   ├── utilities/
+│   │   ├── apiComunicator.jsx
+│   │   ├── auth.jsx
+│   │   └── storage.jsx
+│   ├── App.jsx
+│   ├── index.css
+│   └── main.jsx
+├── .gitignore
+├── components.json
+├── eslint.config.js
+├── index.html
+├── jsconfig.json
+├── package-lock.json
+├── package.json
+├── README.md
+└── vite.config.js
+
 
 ## Componentes Principales
 
